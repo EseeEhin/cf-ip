@@ -60,18 +60,28 @@ class Config:
         # ==================== IP检测V2配置 ====================
         # 第三方API配置
         self.api_enabled: bool = os.getenv('ENABLE_API_FALLBACK', 'true').lower() == 'true'
-        self.api_baidu_enabled: bool = os.getenv('ENABLE_BAIDU_API', 'true').lower() == 'true'
+        
+        # IPInfo.IO Widget API（主要 - 速度最快0.71s，准确度高）
+        self.api_ipinfo_widget_enabled: bool = os.getenv('ENABLE_IPINFO_WIDGET', 'true').lower() == 'true'
+        
+        # IP-API.COM（备用 - 用户确认准确）
         self.api_ipapi_enabled: bool = os.getenv('ENABLE_IPAPI_COM', 'true').lower() == 'true'
-        self.api_pconline_enabled: bool = os.getenv('ENABLE_PCONLINE_API', 'false').lower() == 'true'
+        
+        # IPWhois API（备用 - 稳定可靠）
+        self.api_ipwhois_enabled: bool = os.getenv('ENABLE_IPWHOIS', 'true').lower() == 'true'
+        
+        # IP2Location.IO API（辅助）
+        self.api_ip2location_enabled: bool = os.getenv('ENABLE_IP2LOCATION', 'false').lower() == 'true'
         
         # API超时和重试配置
         self.api_timeout: int = int(os.getenv('API_TIMEOUT', '5'))
         self.api_max_retries: int = int(os.getenv('API_MAX_RETRIES', '2'))
         
-        # API优先级配置
-        self.api_baidu_priority: int = int(os.getenv('API_BAIDU_PRIORITY', '1'))
+        # API优先级配置（数字越小优先级越高）
+        self.api_ipinfo_widget_priority: int = int(os.getenv('API_IPINFO_WIDGET_PRIORITY', '1'))
         self.api_ipapi_priority: int = int(os.getenv('API_IPAPI_PRIORITY', '2'))
-        self.api_pconline_priority: int = int(os.getenv('API_PCONLINE_PRIORITY', '3'))
+        self.api_ipwhois_priority: int = int(os.getenv('API_IPWHOIS_PRIORITY', '3'))
+        self.api_ip2location_priority: int = int(os.getenv('API_IP2LOCATION_PRIORITY', '4'))
         
         # 缓存过期时间配置（秒）
         self.cache_ttl_cf_ray: int = int(os.getenv('CACHE_EXPIRE_CFRAY', '86400'))  # 24小时

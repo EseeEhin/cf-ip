@@ -100,96 +100,10 @@ class BaseAPIProvider(ABC):
         }
 
 
-class BaiduAPIProvider(BaseAPIProvider):
-    """百度IP查询API"""
-    
-    def __init__(self, timeout: int = 3):
-        super().__init__('baidu_api', timeout)
-        self.url_template = 'http://opendata.baidu.com/api.php?query={ip}&resource_id=6006&oe=utf8'
-    
-    def query(self, ip: str) -> Optional[Dict]:
-        """查询IP信息"""
-        self.total_requests += 1
-        
-        try:
-            url = self.url_template.format(ip=ip)
-            response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            
-            result = self.parse_response(response)
-            
-            if result:
-                self.mark_success()
-                return result
-            else:
-                self.mark_failure()
-                return None
-        
-        except requests.exceptions.Timeout:
-            logger.debug(f"百度API超时: {ip}")
-            self.mark_failure()
-            return None
-        
-        except requests.exceptions.RequestException as e:
-            logger.debug(f"百度API请求失败: {ip}, {e}")
-            self.mark_failure()
-            return None
-        
-        except Exception as e:
-            logger.error(f"百度API异常: {ip}, {e}")
-            self.mark_failure()
-            return None
-    
-    def parse_response(self, response: requests.Response) -> Optional[Dict]:
-        """解析百度API响应"""
-        try:
-            data = response.json()
-            
-            if data.get('status') == '0' and 'data' in data and len(data['data']) > 0:
-                info = data['data'][0]
-                location = info.get('location', '').strip()
-                
-                if not location:
-                    return None
-                
-                # 解析位置信息: "国家 省份 城市"
-                parts = location.split()
-                
-                country = self._parse_country(parts[0] if len(parts) > 0 else '')
-                city = parts[-1] if len(parts) > 0 else 'Unknown'
-                
-                return {
-                    'country': country,
-                    'country_name': parts[0] if len(parts) > 0 else 'Unknown',
-                    'city': city,
-                    'isp': '',
-                    'source': 'baidu_api',
-                    'confidence': 0.85
-                }
-            
-            return None
-        
-        except Exception as e:
-            logger.debug(f"百度API响应解析失败: {e}")
-            return None
-    
-    def _parse_country(self, country_name: str) -> str:
-        """解析国家名称为国家代码"""
-        country_map = {
-            '中国': 'CN',
-            '美国': 'US',
-            '日本': 'JP',
-            '韩国': 'KR',
-            '新加坡': 'SG',
-            '香港': 'HK',
-            '台湾': 'TW',
-            '英国': 'GB',
-            '德国': 'DE',
-            '法国': 'FR',
-            '加拿大': 'CA',
-            '澳大利亚': 'AU',
-        }
-        return country_map.get(country_name, 'Unknown')
+# 注释：百度API已移除（不准确）
+# class BaiduAPIProvider(BaseAPIProvider):
+#     """百度IP查询API - 已禁用（不准确）"""
+#     pass
 
 
 class IPAPIProvider(BaseAPIProvider):
@@ -286,12 +200,18 @@ class IPAPIProvider(BaseAPIProvider):
             return None
 
 
-class PConlineAPIProvider(BaseAPIProvider):
-    """太平洋API"""
+# 注释：太平洋API已移除（不准确）
+# class PConlineAPIProvider(BaseAPIProvider):
+#     """太平洋API - 已禁用（不准确）"""
+#     pass
+
+
+class IPInfoWidgetProvider(BaseAPIProvider):
+    """IPInfo.IO Widget API提供商 - 主要API（速度最快，准确度高）"""
     
-    def __init__(self, timeout: int = 3):
-        super().__init__('pconline_api', timeout)
-        self.url_template = 'http://whois.pconline.com.cn/ipJson.jsp?ip={ip}&json=true'
+    def __init__(self, timeout: int = 5):
+        super().__init__('ipinfo_widget', timeout)
+        self.url_template = 'https://ipinfo.io/widget/demo/{ip}'
     
     def query(self, ip: str) -> Optional[Dict]:
         """查询IP信息"""
@@ -312,49 +232,194 @@ class PConlineAPIProvider(BaseAPIProvider):
                 return None
         
         except requests.exceptions.Timeout:
-            logger.debug(f"太平洋API超时: {ip}")
+            logger.debug(f"IPInfo Widget超时: {ip}")
             self.mark_failure()
             return None
         
         except requests.exceptions.RequestException as e:
-            logger.debug(f"太平洋API请求失败: {ip}, {e}")
+            logger.debug(f"IPInfo Widget请求失败: {ip}, {e}")
             self.mark_failure()
             return None
         
         except Exception as e:
-            logger.error(f"太平洋API异常: {ip}, {e}")
+            logger.error(f"IPInfo Widget异常: {ip}, {e}")
             self.mark_failure()
             return None
     
     def parse_response(self, response: requests.Response) -> Optional[Dict]:
-        """解析太平洋API响应"""
+        """解析IPInfo Widget响应"""
         try:
-            # 太平洋API返回的是GBK编码
-            response.encoding = 'gbk'
             data = response.json()
             
-            if 'pro' in data or 'city' in data:
-                province = data.get('pro', '')
-                city = data.get('city', '')
-                
-                # 组合省份和城市
-                location = f"{province}{city}".strip()
-                if not location:
-                    return None
-                
-                return {
-                    'country': 'CN',  # 太平洋API主要返回中国IP信息
-                    'country_name': '中国',
-                    'city': city or province or 'Unknown',
-                    'isp': data.get('addr', ''),
-                    'source': 'pconline_api',
-                    'confidence': 0.80
-                }
+            # IPInfo返回的数据在data.data中
+            ip_data = data.get('data', {})
             
+            if not ip_data:
+                return None
+            
+            # 提取位置信息
+            loc = ip_data.get('loc', '').split(',')
+            latitude = float(loc[0]) if len(loc) > 0 else 0.0
+            longitude = float(loc[1]) if len(loc) > 1 else 0.0
+            
+            # 提取ISP信息用于CF识别
+            org = ip_data.get('org', '')
+            company_name = ip_data.get('company', {}).get('name', '')
+            
+            return {
+                'country': ip_data.get('country', 'Unknown'),
+                'country_name': ip_data.get('country', 'Unknown'),
+                'city': ip_data.get('city', 'Unknown'),
+                'region': ip_data.get('region', ''),
+                'latitude': latitude,
+                'longitude': longitude,
+                'isp': org,
+                'org': company_name,
+                'asn': ip_data.get('asn', {}).get('asn', ''),
+                'timezone': ip_data.get('timezone', ''),
+                'source': 'ipinfo_widget',
+                'confidence': 0.95
+            }
+        
+        except Exception as e:
+            logger.debug(f"IPInfo Widget响应解析失败: {e}")
+            return None
+
+
+class IPWhoisProvider(BaseAPIProvider):
+    """IPWhois API提供商 - 备用API（稳定可靠）"""
+    
+    def __init__(self, timeout: int = 5):
+        super().__init__('ipwhois', timeout)
+        self.url_template = 'https://ipwhois.app/json/{ip}'
+    
+    def query(self, ip: str) -> Optional[Dict]:
+        """查询IP信息"""
+        self.total_requests += 1
+        
+        try:
+            url = self.url_template.format(ip=ip)
+            response = requests.get(url, timeout=self.timeout)
+            response.raise_for_status()
+            
+            result = self.parse_response(response)
+            
+            if result:
+                self.mark_success()
+                return result
+            else:
+                self.mark_failure()
+                return None
+        
+        except requests.exceptions.Timeout:
+            logger.debug(f"IPWhois超时: {ip}")
+            self.mark_failure()
+            return None
+        
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"IPWhois请求失败: {ip}, {e}")
+            self.mark_failure()
             return None
         
         except Exception as e:
-            logger.debug(f"太平洋API响应解析失败: {e}")
+            logger.error(f"IPWhois异常: {ip}, {e}")
+            self.mark_failure()
+            return None
+    
+    def parse_response(self, response: requests.Response) -> Optional[Dict]:
+        """解析IPWhois响应"""
+        try:
+            data = response.json()
+            
+            if not data.get('success', True):
+                return None
+            
+            return {
+                'country': data.get('country_code', 'Unknown'),
+                'country_name': data.get('country', 'Unknown'),
+                'city': data.get('city', 'Unknown'),
+                'region': data.get('region', ''),
+                'latitude': float(data.get('latitude', 0)),
+                'longitude': float(data.get('longitude', 0)),
+                'isp': data.get('isp', ''),
+                'org': data.get('org', ''),
+                'asn': data.get('asn', ''),
+                'timezone': data.get('timezone', ''),
+                'source': 'ipwhois',
+                'confidence': 0.90
+            }
+        
+        except Exception as e:
+            logger.debug(f"IPWhois响应解析失败: {e}")
+            return None
+
+
+class IP2LocationProvider(BaseAPIProvider):
+    """IP2Location.IO API提供商 - 辅助API"""
+    
+    def __init__(self, timeout: int = 5):
+        super().__init__('ip2location', timeout)
+        self.url_template = 'https://api.ip2location.io/?ip={ip}'
+    
+    def query(self, ip: str) -> Optional[Dict]:
+        """查询IP信息"""
+        self.total_requests += 1
+        
+        try:
+            url = self.url_template.format(ip=ip)
+            response = requests.get(url, timeout=self.timeout)
+            response.raise_for_status()
+            
+            result = self.parse_response(response)
+            
+            if result:
+                self.mark_success()
+                return result
+            else:
+                self.mark_failure()
+                return None
+        
+        except requests.exceptions.Timeout:
+            logger.debug(f"IP2Location超时: {ip}")
+            self.mark_failure()
+            return None
+        
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"IP2Location请求失败: {ip}, {e}")
+            self.mark_failure()
+            return None
+        
+        except Exception as e:
+            logger.error(f"IP2Location异常: {ip}, {e}")
+            self.mark_failure()
+            return None
+    
+    def parse_response(self, response: requests.Response) -> Optional[Dict]:
+        """解析IP2Location响应"""
+        try:
+            data = response.json()
+            
+            # 检查是否有错误
+            if 'error' in data:
+                return None
+            
+            return {
+                'country': data.get('country_code', 'Unknown'),
+                'country_name': data.get('country_name', 'Unknown'),
+                'city': data.get('city_name', 'Unknown'),
+                'region': data.get('region_name', ''),
+                'latitude': float(data.get('latitude', 0)),
+                'longitude': float(data.get('longitude', 0)),
+                'isp': data.get('as', ''),
+                'org': data.get('as', ''),
+                'asn': data.get('asn', ''),
+                'timezone': data.get('time_zone', ''),
+                'source': 'ip2location',
+                'confidence': 0.85
+            }
+        
+        except Exception as e:
+            logger.debug(f"IP2Location响应解析失败: {e}")
             return None
 
 

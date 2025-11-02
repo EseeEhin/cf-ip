@@ -1,6 +1,12 @@
 """
 IP检测器V2 - 改进版
 实现三层检测策略：CF-RAY → 第三方API → GeoIP数据库
+
+API优先级（根据用户反馈优化）：
+1. IPInfo.IO Widget - 主要API（速度最快0.71s，CF识别率80%）
+2. IP-API.COM - 备用API（用户确认准确）
+3. IPWhois - 备用API（稳定可靠）
+4. IP2Location - 辅助API
 """
 
 import time
@@ -14,9 +20,10 @@ from .ip_location import GeoIPDatabase
 
 # 导入新模块
 from .api_providers import (
-    BaiduAPIProvider,
+    IPInfoWidgetProvider,
     IPAPIProvider,
-    PConlineAPIProvider,
+    IPWhoisProvider,
+    IP2LocationProvider,
     APIManager
 )
 from .detection_cache import DetectionCache, FailureCache
@@ -71,7 +78,15 @@ class IPDetectorV2:
         logger.info("IPDetectorV2初始化完成")
     
     def _init_api_manager(self) -> APIManager:
-        """初始化API管理器"""
+        """
+        初始化API管理器
+        
+        按优先级顺序注册API：
+        1. IPInfo.IO Widget（主要）- 速度最快，准确度高
+        2. IP-API.COM（备用）- 用户确认准确
+        3. IPWhois（备用）- 稳定可靠
+        4. IP2Location（辅助）- 按需使用
+        """
         manager = APIManager()
         
         # 获取API配置
@@ -80,25 +95,35 @@ class IPDetectorV2:
             logger.info("第三方API已禁用")
             return manager
         
-        api_timeout = getattr(self.config, 'api_timeout', 3)
+        api_timeout = getattr(self.config, 'api_timeout', 5)
         
-        # 注册百度API
-        if getattr(self.config, 'api_baidu_enabled', True):
-            baidu_api = BaiduAPIProvider(timeout=api_timeout)
-            priority = getattr(self.config, 'api_baidu_priority', 1)
-            manager.register_api(baidu_api, priority)
+        # 注册IPInfo.IO Widget（主要API - 优先级1）
+        if getattr(self.config, 'api_ipinfo_widget_enabled', True):
+            ipinfo_widget = IPInfoWidgetProvider(timeout=api_timeout)
+            priority = getattr(self.config, 'api_ipinfo_widget_priority', 1)
+            manager.register_api(ipinfo_widget, priority)
+            logger.info(f"已注册IPInfo.IO Widget API（优先级: {priority}）")
         
-        # 注册IP-API.COM
+        # 注册IP-API.COM（备用API - 优先级2）
         if getattr(self.config, 'api_ipapi_enabled', True):
             ipapi = IPAPIProvider(timeout=api_timeout)
             priority = getattr(self.config, 'api_ipapi_priority', 2)
             manager.register_api(ipapi, priority)
+            logger.info(f"已注册IP-API.COM（优先级: {priority}）")
         
-        # 注册太平洋API
-        if getattr(self.config, 'api_pconline_enabled', False):
-            pconline_api = PConlineAPIProvider(timeout=api_timeout)
-            priority = getattr(self.config, 'api_pconline_priority', 3)
-            manager.register_api(pconline_api, priority)
+        # 注册IPWhois（备用API - 优先级3）
+        if getattr(self.config, 'api_ipwhois_enabled', True):
+            ipwhois = IPWhoisProvider(timeout=api_timeout)
+            priority = getattr(self.config, 'api_ipwhois_priority', 3)
+            manager.register_api(ipwhois, priority)
+            logger.info(f"已注册IPWhois API（优先级: {priority}）")
+        
+        # 注册IP2Location（辅助API - 优先级4）
+        if getattr(self.config, 'api_ip2location_enabled', False):
+            ip2location = IP2LocationProvider(timeout=api_timeout)
+            priority = getattr(self.config, 'api_ip2location_priority', 4)
+            manager.register_api(ip2location, priority)
+            logger.info(f"已注册IP2Location API（优先级: {priority}）")
         
         return manager
     
