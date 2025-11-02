@@ -385,19 +385,41 @@ class IPLocationQuery:
 
 # 全局实例
 _query = None
+_detector_v2 = None
 
 
-def get_ip_location(ip: str, port: int = 443) -> Dict:
+def get_ip_location(ip: str, port: int = 443, use_v2: bool = True) -> Dict:
     """
     获取IP的地理位置（便捷函数）
     
     Args:
         ip: IP地址
         port: 端口号（用于CF-RAY检测），默认443
+        use_v2: 是否使用V2检测器（默认True）
         
     Returns:
         地理位置信息
     """
+    # 检查是否启用V2检测器
+    if use_v2:
+        try:
+            from .ip_detector_v2 import get_detector
+            global _detector_v2
+            
+            if _detector_v2 is None:
+                _detector_v2 = get_detector()
+            
+            result = _detector_v2.detect(ip, port)
+            if result:
+                return result
+            
+            # V2检测失败，回退到V1
+            logger.warning(f"V2检测失败，回退到V1: {ip}")
+        
+        except Exception as e:
+            logger.error(f"V2检测器异常，回退到V1: {e}")
+    
+    # 使用V1检测器
     global _query
     
     if _query is None:
@@ -406,16 +428,41 @@ def get_ip_location(ip: str, port: int = 443) -> Dict:
     return _query.query(ip, port)
 
 
-def get_ip_locations_batch(ips: List[str]) -> Dict[str, Dict]:
+def get_ip_locations_batch(ips: List[str], port: int = 443, use_v2: bool = True) -> Dict[str, Dict]:
     """
     批量获取IP的地理位置（便捷函数）
     
     Args:
         ips: IP地址列表
+        port: 端口号，默认443
+        use_v2: 是否使用V2检测器（默认True）
         
     Returns:
         IP到地理位置的映射
     """
+    # 检查是否启用V2检测器
+    if use_v2:
+        try:
+            from .ip_detector_v2 import get_detector
+            global _detector_v2
+            
+            if _detector_v2 is None:
+                _detector_v2 = get_detector()
+            
+            results = _detector_v2.detect_batch(ips, port)
+            
+            # 检查是否有足够的成功结果
+            success_count = sum(1 for r in results.values() if r is not None)
+            if success_count > 0:
+                return results
+            
+            # V2检测失败，回退到V1
+            logger.warning(f"V2批量检测失败，回退到V1")
+        
+        except Exception as e:
+            logger.error(f"V2检测器异常，回退到V1: {e}")
+    
+    # 使用V1检测器
     global _query
     
     if _query is None:
@@ -440,11 +487,19 @@ def download_geoip_database(db_type: str = 'city') -> bool:
 
 def close_database():
     """关闭数据库连接（便捷函数）"""
-    global _query
+    global _query, _detector_v2
     
     if _query is not None:
         _query.close()
         _query = None
+    
+    if _detector_v2 is not None:
+        try:
+            from .ip_detector_v2 import close_detector
+            close_detector()
+            _detector_v2 = None
+        except Exception as e:
+            logger.error(f"关闭V2检测器失败: {e}")
 
 
 if __name__ == '__main__':

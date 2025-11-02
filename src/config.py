@@ -57,9 +57,40 @@ class Config:
         self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '15'))  # 增加到15秒
         self.cf_ray_max_workers: int = int(os.getenv('CF_RAY_MAX_WORKERS', '5'))  # 减少到5个并发
         
+        # ==================== IP检测V2配置 ====================
+        # 第三方API配置
+        self.api_enabled: bool = os.getenv('ENABLE_API_FALLBACK', 'true').lower() == 'true'
+        self.api_baidu_enabled: bool = os.getenv('ENABLE_BAIDU_API', 'true').lower() == 'true'
+        self.api_ipapi_enabled: bool = os.getenv('ENABLE_IPAPI_COM', 'true').lower() == 'true'
+        self.api_pconline_enabled: bool = os.getenv('ENABLE_PCONLINE_API', 'false').lower() == 'true'
+        
+        # API超时和重试配置
+        self.api_timeout: int = int(os.getenv('API_TIMEOUT', '5'))
+        self.api_max_retries: int = int(os.getenv('API_MAX_RETRIES', '2'))
+        
+        # API优先级配置
+        self.api_baidu_priority: int = int(os.getenv('API_BAIDU_PRIORITY', '1'))
+        self.api_ipapi_priority: int = int(os.getenv('API_IPAPI_PRIORITY', '2'))
+        self.api_pconline_priority: int = int(os.getenv('API_PCONLINE_PRIORITY', '3'))
+        
+        # 缓存过期时间配置（秒）
+        self.cache_ttl_cf_ray: int = int(os.getenv('CACHE_EXPIRE_CFRAY', '86400'))  # 24小时
+        self.cache_ttl_api: int = int(os.getenv('CACHE_EXPIRE_API', '43200'))  # 12小时
+        self.cache_ttl_geoip: int = int(os.getenv('CACHE_EXPIRE_GEOIP', '604800'))  # 7天
+        
+        # 失败处理配置
+        self.failure_retry_delay: int = int(os.getenv('FAILURE_RETRY_DELAY', '3600'))  # 1小时
+        self.api_disable_threshold: int = int(os.getenv('API_DISABLE_THRESHOLD', '3'))
+        self.api_disable_duration: int = int(os.getenv('API_DISABLE_DURATION', '600'))  # 10分钟
+        
+        # 性能配置
+        self.detection_max_workers: int = int(os.getenv('DETECTION_MAX_WORKERS', '10'))
+        self.detection_timeout: int = int(os.getenv('DETECTION_TIMEOUT', '10'))
+        
         # 日志配置
         self.log_level: str = os.getenv('LOG_LEVEL', 'INFO')
         self.log_file: str = os.getenv('LOG_FILE', 'logs/ip_fetcher.log')
+        self.log_detection_details: bool = os.getenv('LOG_DETECTION_DETAILS', 'true').lower() == 'true'
     
     def validate(self) -> bool:
         """
