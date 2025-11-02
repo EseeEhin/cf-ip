@@ -30,6 +30,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPO: ${{ secrets.TARGET_REPO }}
+          SUBSCRIPTION_API_URL: ${{ secrets.SUBSCRIPTION_API_URL }}
+          SUBSCRIPTION_API_PATH: ${{ secrets.SUBSCRIPTION_API_PATH }}
+          API_UPLOAD_ENABLED: ${{ secrets.API_UPLOAD_ENABLED }}
         run: python -m src.main
       
       - name: Upload logs

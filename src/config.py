@@ -43,6 +43,11 @@ class Config:
         self.github_branch: str = os.getenv('GITHUB_BRANCH', 'main')
         self.github_file_path: str = os.getenv('GITHUB_FILE_PATH', 'optimal-ips.txt')
         
+        # 订阅项目API配置
+        self.subscription_api_url: Optional[str] = os.getenv('SUBSCRIPTION_API_URL')
+        self.subscription_api_path: Optional[str] = os.getenv('SUBSCRIPTION_API_PATH')
+        self.api_upload_enabled: bool = os.getenv('API_UPLOAD_ENABLED', 'false').lower() == 'true'
+        
         # 请求配置
         self.request_timeout: int = int(os.getenv('REQUEST_TIMEOUT', '30'))
         self.max_retries: int = int(os.getenv('MAX_RETRIES', '3'))
@@ -94,4 +99,13 @@ def get_config() -> Config:
     """
     config = Config()
     config.validate()
+
+# 导出常用配置供其他模块使用
+_config = get_config()
+
+# 订阅项目API配置
+SUBSCRIPTION_API_URL = _config.subscription_api_url
+SUBSCRIPTION_API_PATH = _config.subscription_api_path
+API_UPLOAD_ENABLED = _config.api_upload_enabled
+API_TIMEOUT = _config.request_timeout
     return config

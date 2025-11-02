@@ -366,7 +366,7 @@ class MultiSourceFetcher:
             node_str = f"{ip}:{port}#{source}-{country}-{city}"
             formatted.append(node_str)
         
-        return ','.join(formatted)
+        return '\n'.join(formatted)
 
 
 if __name__ == '__main__':
