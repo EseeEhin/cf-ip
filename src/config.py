@@ -23,12 +23,16 @@ class Config:
         # 过滤配置
         self.max_latency: int = int(os.getenv('MAX_LATENCY', '100'))
         
-        # 国家过滤列表（逗号分隔）
-        filter_countries = os.getenv('FILTER_COUNTRIES', 'JP,US,SG')
+        # 国家过滤列表（逗号分隔）- 默认改为JP,HK,US
+        filter_countries = os.getenv('FILTER_COUNTRIES', 'JP,HK,US')
         self.filter_countries: List[str] = [c.strip() for c in filter_countries.split(',') if c.strip()]
         
-        # 查询限制
-        self.query_limit: int = int(os.getenv('QUERY_LIMIT', '100'))
+        # 查询限制 - 默认改为10
+        self.query_limit: int = int(os.getenv('QUERY_LIMIT', '10'))
+        
+        # 缓存配置
+        self.cache_enabled: bool = os.getenv('CACHE_ENABLED', 'true').lower() == 'true'
+        self.cache_days: int = int(os.getenv('CACHE_DAYS', '30'))
         
         # 输出配置
         self.output_file: str = os.getenv('OUTPUT_FILE', 'output/优选IP.txt')

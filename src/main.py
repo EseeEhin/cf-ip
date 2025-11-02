@@ -8,8 +8,8 @@ import logging
 from typing import Optional
 
 from .config import get_config
-from .utils import setup_logging, get_timestamp
-from .ip_fetcher import IPFetcher
+from .utils import setup_logging, get_timestamp, write_to_file
+from .multi_source_fetcher import MultiSourceFetcher
 from .github_uploader import GitHubUploader
 
 
@@ -44,7 +44,7 @@ def get_file_size(file_path: str) -> int:
 
 def fetch_ip_data(config, logger) -> bool:
     """
-    获取IP数据
+    获取IP数据（使用多数据源）
     
     Args:
         config: 配置对象
@@ -54,52 +54,46 @@ def fetch_ip_data(config, logger) -> bool:
         bool: 是否成功
     """
     logger.info("=" * 60)
-    logger.info("步骤 1/2: 获取优选IP数据")
+    logger.info("步骤 1/2: 获取优选IP数据（多数据源模式）")
     logger.info("=" * 60)
     
     try:
-        # 初始化获取器
-        fetcher = IPFetcher(config)
+        # 初始化多数据源获取器
+        fetcher = MultiSourceFetcher()
         
-        # 获取国家列表
-        countries = fetcher.fetch_countries()
-        if not countries:
-            logger.warning("无法获取国家列表，但继续执行")
+        # 从所有数据源获取节点
+        logger.info(f"配置的国家: {', '.join(config.filter_countries)}")
+        logger.info(f"每个国家限制: {config.query_limit} 个节点")
         
-        # 收集所有节点
-        all_nodes = []
-        
-        # 按配置的国家查询代理
-        for country_code in config.filter_countries:
-            logger.info(f"正在查询国家: {country_code}")
-            nodes = fetcher.fetch_proxies(
-                country_code=country_code,
-                port='',
-                limit=config.query_limit
-            )
-            
-            if nodes:
-                logger.info(f"从 {country_code} 获取到 {len(nodes)} 个节点")
-                all_nodes.extend(nodes)
-            else:
-                logger.warning(f"从 {country_code} 未获取到节点")
-        
-        logger.info(f"共获取到 {len(all_nodes)} 个节点")
+        all_nodes = fetcher.fetch_all(
+            countries=config.filter_countries,
+            limit=config.query_limit
+        )
         
         if not all_nodes:
             logger.error("未找到任何节点")
             return False
         
-        # 转换格式并写入文件
-        from .utils import format_node_list, write_to_file
+        logger.info(f"共获取到 {len(all_nodes)} 个节点")
         
-        output_text = format_node_list(all_nodes)
+        # 统计各数据源的节点数
+        source_stats = {}
+        for node in all_nodes:
+            source = node.get('source', 'Unknown')
+            source_stats[source] = source_stats.get(source, 0) + 1
+        
+        logger.info("数据源统计:")
+        for source, count in source_stats.items():
+            logger.info(f"  {source}: {count} 个节点")
+        
+        # 格式化输出
+        output_text = fetcher.format_nodes(all_nodes)
         logger.info(f"生成输出文本，长度: {len(output_text)} 字符")
         
+        # 写入文件
         if write_to_file(config.output_file, output_text):
             logger.info(f"成功写入输出文件: {config.output_file}")
-            logger.info(f"节点数量: {len(all_nodes)}")
-            logger.info(f"国家分布: {', '.join(config.filter_countries)}")
+            logger.info(f"总节点数量: {len(all_nodes)}")
             return True
         else:
             logger.error("写入输出文件失败")

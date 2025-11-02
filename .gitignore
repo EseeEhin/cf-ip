@@ -25,6 +25,10 @@ logs/*.log
 
 # 输出文件（如果不需要提交到仓库）
 # output/*.txt
+# 缓存文件
+cache/*.json
+!cache/.gitkeep
+
 
 # IDE
 .vscode/
