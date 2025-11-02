@@ -99,6 +99,8 @@ def get_config() -> Config:
     """
     config = Config()
     config.validate()
+    return config
+
 
 # 导出常用配置供其他模块使用
 _config = get_config()
@@ -108,4 +110,3 @@ SUBSCRIPTION_API_URL = _config.subscription_api_url
 SUBSCRIPTION_API_PATH = _config.subscription_api_path
 API_UPLOAD_ENABLED = _config.api_upload_enabled
 API_TIMEOUT = _config.request_timeout
-    return config
