@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP代理查询 | Proxy IP Query</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4e54c8;
+      --secondary: #6a71e6;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --dark: #1a2a6c;
+      --light: #f5f5f5;
+      --card-bg: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+    }
+    
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    }
+    
+    body { 
+      background: linear-gradient(135deg, var(--dark), #b21f1f, var(--dark)); 
+      color: var(--text); 
+      min-height: 100vh; 
+      padding: 20px; 
+      line-height: 1.6;
+    }
+    
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+    }
+    
+    header { 
+      text-align: center; 
+      padding: 30px 0 20px; 
+      position: relative;
+    }
+    
+    h1 { 
+      font-size: 2.8rem; 
+      margin-bottom: 10px; 
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      background: linear-gradient(to right, #ff7e5f, #feb47b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+    
+    .subtitle { 
+      opacity: 0.85; 
+      font-size: 1.2rem; 
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .card { 
+      background: var(--card-bg); 
+      backdrop-filter: blur(12px); 
+      border-radius: 16px; 
+      padding: 30px; 
+      margin: 20px 0; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+    
+    .form-group { 
+      margin-bottom: 25px; 
+    }
+    
+    label { 
+      display: block; 
+      margin-bottom: 10px; 
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    label i {
+      margin-right: 10px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    select, input { 
+      width: 100%; 
+      padding: 14px 18px; 
+      border-radius: 10px; 
+      border: none; 
+      background: rgba(255, 255, 255, 0.12); 
+      color: var(--text); 
+      font-size: 16px; 
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--secondary);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 0 3px rgba(106, 113, 230, 0.3);
+    }
+    
+    input::placeholder { 
+      color: rgba(255, 255, 255, 0.6); 
+    }
+    
+    option { 
+      background: #2a2a4d; 
+      color: var(--text); 
+    }
+    
+    .btn { 
+      background: var(--primary); 
+      color: white; 
+      border: none; 
+      padding: 16px 24px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      font-size: 18px; 
+      font-weight: 600; 
+      width: 100%; 
+      transition: all 0.3s; 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .btn:hover { 
+      background: var(--secondary); 
+      transform: translateY(-3px); 
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2); 
+    }
+    
+    .btn:active { 
+      transform: translateY(0); 
+    }
+    
+    .btn-copy {
+      background: var(--success);
+    }
+    
+    .btn-test {
+      background: var(--warning);
+    }
+    
+    .results { 
+      margin-top: 30px; 
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .result-item { 
+      padding: 14px 18px; 
+      background: rgba(255, 255, 255, 0.08); 
+      border-radius: 8px; 
+      margin-bottom: 12px; 
+      font-family: 'Fira Code', monospace;
+      display: flex; 
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+    
+    .result-item:hover {
+      transform: translateX(5px);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    
+    .result-item:nth-child(odd) { 
+      background: rgba(255, 255, 255, 0.12); 
+    }
+    
+    .ip-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    
+    .ip-address {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .ip-location {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .latency { 
+      color: var(--success); 
+      font-weight: bold; 
+      font-size: 1.2rem;
+      min-width: 80px;
+      text-align: right;
+    }
+    
+    .latency.timeout {
+      color: var(--danger);
+    }
+    
+    .actions { 
+      display: flex; 
+      gap: 15px; 
+      margin-top: 20px;
+    }
+    
+    .footer { 
+      text-align: center; 
+      margin-top: 30px; 
+      padding-top: 20px; 
+      border-top: 1px solid rgba(255, 255, 255, 0.15); 
+      opacity: 0.8; 
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+    
+    a { 
+      color: #64b5f6; 
+      text-decoration: none; 
+      transition: color 0.2s;
+    }
+    
+    a:hover { 
+      color: #90caf9;
+      text-decoration: underline; 
+    }
+    
+    .loading { 
+      display: none; 
+      text-align: center; 
+      padding: 30px; 
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    
+    .spinner { 
+      border: 4px solid rgba(255, 255, 255, 0.3); 
+      border-radius: 50%; 
+      border-top: 4px solid #fff; 
+      width: 40px; 
+      height: 40px; 
+      animation: spin 1s linear infinite; 
+      margin: 0 auto 20px; 
+    }
+    
+    @keyframes spin { 
+      0% { transform: rotate(0deg); } 
+      100% { transform: rotate(360deg); } 
+    }
+    
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #feb47b;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .progress-bar {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    
+    .progress {
+      height: 100%;
+      background: linear-gradient(90deg, #ff7e5f, #feb47b);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .country-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .country-item:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .country-item.selected {
+      background: var(--primary);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+    
+    .country-flag {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .country-name {
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      header {
+        padding: 20px 0 10px;
+      }
+      
+      h1 {
+        font-size: 2.2rem;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .form-row {
+        flex-direction: column;
+      }
+      
+      .form-group {
+        width: 100%;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+      
+      .result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .latency {
+        text-align: left;
+      }
+      
+      .stats {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .country-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-globe-asia"></i> IP代理查询</h1>
+      <div class="subtitle">Proxy IP Query Service</div>
+    </header>
+    
+    <div class="card">
+      <div class="form-group">
+        <label for="country-input"><i class="fas fa-flag"></i> 国家/地区</label>
+        <input type="text" id="country-input" placeholder="输入国家/地区 (如: 香港)" list="country-list">
+        <datalist id="country-list"></datalist>
+        
+        <div class="country-grid" id="country-grid">
+          <!-- 国家列表将动态填充 -->
+        </div>
+      </div>
+      
+      <div class="form-row" style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <div class="form-group" style="flex: 2;">
+          <label for="port"><i class="fas fa-plug"></i> 端口 (可选)</label>
+          <input type="number" id="port" placeholder="默认随机端口 (如: 443)">
+        </div>
+        
+        <div class="form-group" style="flex: 1;">
+          <label for="limit"><i class="fas fa-list-ol"></i> 结果数量</label>
+          <select id="limit">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="total-proxies">0</div>
+          <div class="stat-label">总代理数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="total-countries">0</div>
+          <div class="stat-label">国家地区</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">24h</div>
+          <div class="stat-label">更新频率</div>
+        </div>
+      </div>
+      
+      <button id="start-btn" class="btn">
+        <i class="fas fa-play"></i> 开始查询
+      </button>
+    </div>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>正在加载数据，请稍候...</p>
+      <p id="progress">加载进度: <span id="progress-text">0%</span></p>
+    </div>
+    
+    <div class="card results" style="display: none;" id="results-card">
+      <div class="result-header">
+        <h2><i class="fas fa-list-check"></i> 查询结果</h2>
+        <div class="actions">
+          <button class="btn btn-copy" id="copy-btn">
+            <i class="fas fa-copy"></i> 一键复制
+          </button>
+        </div>
+      </div>
+      <div id="results"></div>
+    </div>
+    
+    <div class="footer">
+      <p>最后更新时间: <span id="update-time">2025-10-30 17:08:02 UTC+8</span></p>
+      <p>技术支持: <a href="https://t.me/wxgqlfx" target="_blank"><i class="fab fa-telegram"></i> @wxgqlfx</a></p>
+    </div>
+  </div>
+
+  <div class="notification" id="notification">结果已复制到剪贴板!</div>
+
+  <script>
+    // 显示通知
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      
+      // 设置通知类型样式
+      notification.className = 'notification';
+      if (type === 'success') {
+        notification.style.borderLeft = '5px solid #4caf50';
+      } else if (type === 'error') {
+        notification.style.borderLeft = '5px solid #f44336';
+      } else {
+        notification.style.borderLeft = '5px solid #4e54c8';
+      }
+      
+      notification.classList.add('show');
+      
+      // 3秒后隐藏
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // 获取国家列表
+    async function loadCountries() {
+      try {
+        const response = await fetch('/api/countries');
+        if (!response.ok) {
+          throw new Error('获取国家列表失败: ' + response.status);
+        }
+        
+        const countries = await response.json();
+        const datalist = document.getElementById('country-list');
+        const grid = document.getElementById('country-grid');
+        
+        // 清空现有内容
+        datalist.innerHTML = '';
+        grid.innerHTML = '';
+        
+        // 填充国家列表
+        countries.forEach(country => {
+          // 添加到datalist
+          const option = document.createElement('option');
+          option.value = country.name;
+          option.dataset.code = country.code;
+          datalist.appendChild(option);
+          
+          // 添加到网格
+          const countryItem = document.createElement('div');
+          countryItem.className = 'country-item';
+          countryItem.dataset.code = country.code;
+          countryItem.dataset.name = country.name;
+          
+          countryItem.innerHTML = '<div class="country-flag">' + country.code + '</div>' +
+                                  '<div class="country-name">' + country.name + '</div>';
+          
+          countryItem.addEventListener('click', () => {
+            // 移除之前的选择
+            document.querySelectorAll('.country-item.selected').forEach(item => {
+              item.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            countryItem.classList.add('selected');
+            
+            // 更新输入框
+            document.getElementById('country-input').value = country.name;
+          });
+          
+          grid.appendChild(countryItem);
+        });
+        
+        // 更新国家数量
+        document.getElementById('total-countries').textContent = countries.length;
+        console.log('已加载国家列表:', countries);
+        
+      } catch (error) {
+        console.error('加载国家列表失败:', error);
+        showNotification('加载国家列表失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 获取代理总数
+    async function getTotalProxies() {
+      try {
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            country: '',
+            port: '',
+            limit: 1
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('获取代理总数失败: ' + response.status);
+        }
+        
+        const data = await response.json();
+        document.getElementById('total-proxies').textContent = data.totalProxies.toLocaleString();
+        console.log('总代理数:', data.totalProxies);
+        
+      } catch (error) {
+        console.error('获取代理总数失败:', error);
+        document.getElementById('total-proxies').textContent = '未知';
+        showNotification('获取代理总数失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 测试延迟 - 使用更可靠的方法
+    function testLatency(ip, port) {
+      return new Promise((resolve) => {
+        const startTime = performance.now();
+        const img = new Image();
+        
+        // 使用随机URL防止缓存
+        const url = 'http://' + ip + ':' + port + '/?rand=' + Math.random();
+        
+        img.onload = function() {
+          const latency = Math.round(performance.now() - startTime);
+          resolve(latency);
+        };
+        
+        img.onerror = function() {
+          // 即使出错，也可能是连接成功但资源不存在
+          const latency = Math.round(performance.now() - startTime);
+          resolve(latency);
+        };
+        
+        // 设置超时
+        setTimeout(() => {
+          img.src = ''; // 取消请求
+          resolve(9999); // 超时
+        }, 5000);
+        
+        img.src = url;
+      });
+    }
+    
+    // 开始查询
+    async function startQuery() {
+      const countryInput = document.getElementById('country-input').value;
+      const portInput = document.getElementById('port').value;
+      const limit = parseInt(document.getElementById('limit').value) || 10;
+      
+      // 获取国家代码
+      let countryCode = '';
+      const selectedCountry = document.querySelector('.country-item.selected');
+      if (selectedCountry) {
+        countryCode = selectedCountry.dataset.code;
+      } else if (countryInput) {
+        // 尝试从输入匹配国家
+        const countryOption = document.querySelector('#country-list option[value="' + countryInput + '"]');
+        if (countryOption) {
+          countryCode = countryOption.dataset.code;
+        }
+      }
+      
+      if (!countryCode) {
+        showNotification('请选择有效的国家/地区', 'error');
+        return;
+      }
+      
+      // 显示加载状态
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('results-card').style.display = 'none';
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('progress-text').textContent = '0%';
+      
+      try {
+        // 获取代理列表
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            country: countryCode, 
+            port: portInput, 
+            limit 
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('查询请求失败: ' + response.status);
+        }
+        
+        const data = await response.json();
+        const proxies = data.proxies;
+        
+        console.log('API响应:', data);
+        
+        if (!proxies || proxies.length === 0) {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('results-card').style.display = 'block';
+          document.getElementById('results').innerHTML = '<div class="result-item">没有找到符合条件的代理</div>';
+          showNotification('未找到符合条件的代理', 'error');
+          return;
+        }
+        
+        // 测试延迟并显示结果
+        const resultsContainer = document.getElementById('results');
+        const progressElement = document.getElementById('progress-text');
+        
+        const resultsWithLatency = [];
+        let completed = 0;
+        
+        for (const proxy of proxies) {
+          // 更新进度
+          const progress = Math.round((completed / proxies.length) * 100);
+          progressElement.textContent = progress + '%';
+          
+          // 测试延迟
+          const latency = await testLatency(proxy.ip, proxy.port);
+          resultsWithLatency.push({ 
+            ...proxy, 
+            latency
+          });
+          
+          completed++;
+          
+          // 实时显示结果
+          resultsContainer.innerHTML += 
+            '<div class="result-item">' +
+              '<div class="ip-info">' +
+                '<div class="ip-address">' + proxy.ip + ':' + proxy.port + '</div>' +
+                '<div class="ip-location">' + proxy.country + ' | ' + (proxy.city || '未知城市') + '</div>' +
+              '</div>' +
+              '<div class="latency ' + (latency >= 9999 ? 'timeout' : '') + '">' + 
+                (latency < 9999 ? latency + 'ms' : '超时') + 
+              '</div>' +
+            '</div>';
+        }
+        
+        // 按延迟排序
+        const sortedResults = resultsWithLatency
+          .filter(item => item.latency < 9999)
+          .sort((a, b) => a.latency - b.latency)
+          .slice(0, limit);
+        
+        // 更新显示排序后的结果
+        resultsContainer.innerHTML = '';
+        sortedResults.forEach(item => {
+          resultsContainer.innerHTML += 
+            '<div class="result-item">' +
+              '<div class="ip-info">' +
+                '<div class="ip-address">' + item.ip + ':' + item.port + '</div>' +
+                '<div class="ip-location">' + item.country + ' | ' + (item.city || '未知城市') + '</div>' +
+              '</div>' +
+              '<div class="latency">' + item.latency + 'ms</div>' +
+            '</div>';
+        });
+        
+        // 显示结果卡片
+        document.getElementById('results-card').style.display = 'block';
+        showNotification('找到 ' + sortedResults.length + ' 个有效代理', 'success');
+        
+      } catch (error) {
+        console.error('查询失败:', error);
+        showNotification('查询失败: ' + error.message, 'error');
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+    
+    // 复制结果
+    function copyResults() {
+      const results = document.querySelectorAll('.result-item');
+      let text = '';
+      
+      results.forEach(item => {
+        const ip = item.querySelector('.ip-address').textContent;
+        const location = item.querySelector('.ip-location').textContent;
+        const latency = item.querySelector('.latency').textContent;
+        text += ip + ' | ' + location + ' | ' + latency + '\n';
+      });
+      
+      navigator.clipboard.writeText(text)
+        .then(() => showNotification('结果已复制到剪贴板!', 'success'))
+        .catch(err => {
+          console.error('复制失败:', err);
+          showNotification('复制失败，请手动复制', 'error');
+        });
+    }
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载国家列表
+      loadCountries();
+      
+      // 获取代理总数
+      getTotalProxies();
+      
+      // 绑定事件
+      document.getElementById('start-btn').addEventListener('click', startQuery);
+      document.getElementById('copy-btn').addEventListener('click', copyResults);
+      
+      // 国家输入框搜索功能
+      document.getElementById('country-input').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const countryItems = document.querySelectorAll('.country-item');
+        
+        countryItems.forEach(item => {
+          const countryName = item.dataset.name.toLowerCase();
+          if (countryName.includes(searchTerm)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
