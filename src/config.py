@@ -54,8 +54,8 @@ class Config:
         
         # CF-RAY检测配置（用于获取Cloudflare节点真实位置）
         self.cf_ray_detection_enabled: bool = os.getenv('CF_RAY_DETECTION_ENABLED', 'true').lower() == 'true'
-        self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '5'))
-        self.cf_ray_max_workers: int = int(os.getenv('CF_RAY_MAX_WORKERS', '10'))
+        self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '15'))  # 增加到15秒
+        self.cf_ray_max_workers: int = int(os.getenv('CF_RAY_MAX_WORKERS', '5'))  # 减少到5个并发
         
         # 日志配置
         self.log_level: str = os.getenv('LOG_LEVEL', 'INFO')

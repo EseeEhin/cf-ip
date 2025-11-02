@@ -175,7 +175,7 @@ def upload_to_github(config, logger) -> bool:
         return False
 
 
-def upload_to_api(config, logger, all_nodes: list) -> bool:
+def upload_to_api(config, logger, all_nodes: list) -> Optional[bool]:
     """
     通过API上传优选IP到订阅项目
     
@@ -185,7 +185,7 @@ def upload_to_api(config, logger, all_nodes: list) -> bool:
         all_nodes: 所有节点列表
     
     Returns:
-        bool: 是否成功
+        Optional[bool]: True=成功, False=失败, None=跳过
     """
     logger.info("=" * 60)
     logger.info("步骤 3/3: 上传到订阅项目API")
@@ -194,15 +194,15 @@ def upload_to_api(config, logger, all_nodes: list) -> bool:
     # 检查API配置
     if not config.api_upload_enabled:
         logger.info("API上传功能未启用，跳过")
-        return True
+        return None
     
     if not config.subscription_api_url:
         logger.warning("未配置SUBSCRIPTION_API_URL，跳过API上传")
-        return True
+        return None
     
     if not config.subscription_api_path:
         logger.warning("未配置SUBSCRIPTION_API_PATH，跳过API上传")
-        return True
+        return None
     
     try:
         # 初始化API上传器
@@ -233,7 +233,7 @@ def upload_to_api(config, logger, all_nodes: list) -> bool:
         return False
 
 
-def print_summary(logger, fetch_success: bool, upload_success: bool, api_success: bool, start_time: str, end_time: str):
+def print_summary(logger, fetch_success: bool, upload_success: bool, api_success: Optional[bool], start_time: str, end_time: str):
     """
     打印执行摘要
     
@@ -241,7 +241,7 @@ def print_summary(logger, fetch_success: bool, upload_success: bool, api_success
         logger: 日志对象
         fetch_success: IP获取是否成功
         upload_success: GitHub上传是否成功
-        api_success: API上传是否成功
+        api_success: API上传是否成功（None表示跳过）
         start_time: 开始时间
         end_time: 结束时间
     """
@@ -252,9 +252,17 @@ def print_summary(logger, fetch_success: bool, upload_success: bool, api_success
     logger.info(f"结束时间: {end_time}")
     logger.info(f"IP数据获取: {'✓ 成功' if fetch_success else '✗ 失败'}")
     logger.info(f"GitHub上传: {'✓ 成功' if upload_success else '✗ 失败'}")
-    logger.info(f"API上传: {'✓ 成功' if api_success else '✗ 失败'}")
     
-    if fetch_success and upload_success and api_success:
+    # API上传状态显示
+    if api_success is None:
+        logger.info(f"API上传: - 跳过（未配置）")
+    elif api_success:
+        logger.info(f"API上传: ✓ 成功")
+    else:
+        logger.info(f"API上传: ✗ 失败")
+    
+    # 判断整体状态
+    if fetch_success and upload_success and (api_success is True or api_success is None):
         logger.info("状态: 全部完成")
     elif fetch_success:
         logger.info("状态: 部分完成")
