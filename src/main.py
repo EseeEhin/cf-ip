@@ -275,6 +275,10 @@ def main() -> int:
     all_nodes = []  # 保存所有节点数据
     
     try:
+        # 确保必要的目录存在（在任何操作之前）
+        for directory in ['logs', 'output', 'cache']:
+            os.makedirs(directory, exist_ok=True)
+        
         # 加载配置
         config = get_config()
         
