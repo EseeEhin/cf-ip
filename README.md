@@ -14,6 +14,17 @@
 - 📝 **灵活格式** - 支持多种输出格式
 - 🔄 **定时更新** - 可自定义更新频率（默认每6小时）
 - 📊 **详细日志** - 完整的执行日志和错误追踪
+- 🎯 **CF-RAY检测** - 自动识别Cloudflare节点真实数据中心位置
+
+### 🎯 Cloudflare节点真实位置检测
+
+- 通过CF-RAY响应头获取Cloudflare节点真实数据中心位置
+- 支持100+个全球数据中心的机场代码映射
+- 自动识别并检测Cloudflare IP
+- 检测失败时自动回退到CF-Anycast标记
+- 批量并发检测，性能优化
+
+详细说明请参考：[CF_RAY_DETECTION.md](CF_RAY_DETECTION.md)
 
 ## 📋 目录
 
@@ -213,6 +224,37 @@ GitHub Actions免费额度：
 
 ## ⚙️ 配置说明
 
+### CF-RAY检测配置
+
+在`.env`文件中配置CF-RAY检测参数：
+
+```env
+# 是否启用CF-RAY检测（默认：true）
+CF_RAY_DETECTION_ENABLED=true
+
+# CF-RAY检测超时时间，单位：秒（默认：5）
+CF_RAY_TIMEOUT=5
+
+# CF-RAY检测最大并发数（默认：10）
+CF_RAY_MAX_WORKERS=10
+```
+
+**配置说明：**
+
+- `CF_RAY_DETECTION_ENABLED`：是否启用CF-RAY检测功能
+  - `true`：启用，获取Cloudflare节点真实位置
+  - `false`：禁用，所有Cloudflare IP显示为`CF-Anycast`
+
+- `CF_RAY_TIMEOUT`：单个IP的检测超时时间（秒）
+  - 网络良好：3-5秒
+  - 网络较差：8-10秒
+
+- `CF_RAY_MAX_WORKERS`：并发检测的最大线程数
+  - 少量IP（<50）：5-10
+  - 大量IP（>100）：15-20
+
+详细配置说明请参考：[CF_RAY_DETECTION.md](CF_RAY_DETECTION.md#配置说明)
+
 ### 数据源配置
 
 ```yaml
@@ -294,6 +336,30 @@ on:
 output:
   format: "ip_port"  # 改为 ip_port
 ```
+
+### CF-RAY检测输出对比
+
+#### 启用CF-RAY检测后
+
+```
+104.16.132.229:443#A-JP-Tokyo        # Cloudflare东京节点
+172.64.229.95:443#B-HK-Hong Kong     # Cloudflare香港节点
+104.18.35.42:2053#C-US-Los Angeles   # Cloudflare洛杉矶节点
+```
+
+显示Cloudflare节点的真实数据中心位置。
+
+#### 未启用或检测失败时
+
+```
+104.16.132.229:443#A-CF-Anycast      # 回退到Anycast标记
+172.64.229.95:443#B-CF-Anycast
+104.18.35.42:2053#C-CF-Anycast
+```
+
+所有Cloudflare IP都显示为`CF-Anycast`。
+
+**注意**：检测失败时会自动回退到`CF-Anycast`标记，不影响程序正常运行。
 
 ## 📖 使用方法
 

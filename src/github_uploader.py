@@ -249,7 +249,10 @@ class GitHubUploader:
             commit = result['commit']
             self.logger.info(f"Commit SHA: {commit.sha}")
             self.logger.info(f"Commit URL: {commit.html_url}")
-            self.logger.info(f"Commit 信息: {commit.commit.message.split(chr(10))[0]}")
+            if commit and commit.commit and commit.commit.message:
+                self.logger.info(f"Commit 信息: {commit.commit.message.split(chr(10))[0]}")
+            else:
+                self.logger.info("Commit 信息: 无法获取")
             
             return True
             

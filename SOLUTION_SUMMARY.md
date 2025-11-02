@@ -28,7 +28,73 @@
   - 删除指定IP
   - 清空所有IP
 
-#### 2. 配置管理
+#### 2. CF-RAY检测模块 (`src/cf_ray_detector.py`)
+
+**实现文件**：[`src/cf_ray_detector.py`](src/cf_ray_detector.py)
+
+**核心功能**：
+- 通过HTTPS请求获取CF-RAY响应头
+- 解析机场代码（如NRT、LAX、HKG）
+- 映射到真实的国家和城市
+- 批量并发检测，提高性能
+
+**技术特点**：
+- 支持100+个Cloudflare数据中心
+- 自动错误处理和回退机制
+- 可配置的超时和并发参数
+- 与GeoIP数据库无缝集成
+
+**工作流程**：
+
+```python
+# 1. 判断是否为Cloudflare IP
+if is_cloudflare_ip(ip):
+    # 2. 发送HTTPS请求获取CF-RAY
+    response = requests.get(f'https://{ip}', timeout=5)
+    cf_ray = response.headers.get('CF-RAY', '')
+    
+    # 3. 解析机场代码
+    airport_code = cf_ray.split('-')[1]  # 如: 'NRT'
+    
+    # 4. 映射到真实位置
+    country, city = AIRPORT_TO_LOCATION[airport_code]
+    # 返回: ('JP', 'Tokyo')
+```
+
+**性能数据**：
+- 单个IP检测：<5秒
+- 批量检测：并发处理（可配置并发数）
+- 检测成功率：视网络状况而定
+- 失败自动回退：显示为CF-Anycast
+
+**配置选项**：
+
+```env
+# 是否启用CF-RAY检测（默认：true）
+CF_RAY_DETECTION_ENABLED=true
+
+# CF-RAY检测超时时间（秒，默认：5）
+CF_RAY_TIMEOUT=5
+
+# CF-RAY检测最大并发数（默认：10）
+CF_RAY_MAX_WORKERS=10
+```
+
+**输出对比**：
+
+启用前：
+```
+104.16.132.229:443#A-CF-Anycast
+```
+
+启用后：
+```
+104.16.132.229:443#A-JP-Tokyo
+```
+
+详细说明请参考：[CF_RAY_DETECTION.md](CF_RAY_DETECTION.md)
+
+#### 3. 配置管理
 
 在 `src/config.py` 中添加了API相关配置：
 

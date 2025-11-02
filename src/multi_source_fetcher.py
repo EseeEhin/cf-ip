@@ -168,24 +168,24 @@ class SourceB(DataSource):
         return None
     
     def _add_locations(self, nodes: List[Dict]) -> List[Dict]:
-        """批量添加地理位置信息"""
+        """批量添加地理位置信息（支持CF-RAY检测）"""
         try:
             logger.info(f"[{self.name}] 正在查询 {len(nodes)} 个IP的地理位置...")
             
-            # 提取所有IP
-            ips = [node['ip'] for node in nodes]
+            # 导入get_ip_location以支持端口参数
+            from .ip_location import get_ip_location
             
-            # 批量查询
-            locations = get_ip_locations_batch(ips)
-            
-            # 添加地理位置到节点
+            # 逐个查询（因为需要传递端口信息）
             for node in nodes:
                 ip = node['ip']
-                if ip in locations:
-                    location = locations[ip]
+                port = int(node.get('port', 443))
+                
+                try:
+                    location = get_ip_location(ip, port)
                     node['country'] = location.get('country', 'Unknown')
                     node['city'] = location.get('city', 'Unknown')
-                else:
+                except Exception as e:
+                    logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
                     node['country'] = 'Unknown'
                     node['city'] = 'Unknown'
             
@@ -266,24 +266,24 @@ class SourceC(DataSource):
         return None
     
     def _add_locations(self, nodes: List[Dict]) -> List[Dict]:
-        """批量添加地理位置信息"""
+        """批量添加地理位置信息（支持CF-RAY检测）"""
         try:
             logger.info(f"[{self.name}] 正在查询 {len(nodes)} 个IP的地理位置...")
             
-            # 提取所有IP
-            ips = [node['ip'] for node in nodes]
+            # 导入get_ip_location以支持端口参数
+            from .ip_location import get_ip_location
             
-            # 批量查询
-            locations = get_ip_locations_batch(ips)
-            
-            # 添加地理位置到节点
+            # 逐个查询（因为需要传递端口信息）
             for node in nodes:
                 ip = node['ip']
-                if ip in locations:
-                    location = locations[ip]
+                port = int(node.get('port', 443))
+                
+                try:
+                    location = get_ip_location(ip, port)
                     node['country'] = location.get('country', 'Unknown')
                     node['city'] = location.get('city', 'Unknown')
-                else:
+                except Exception as e:
+                    logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
                     node['country'] = 'Unknown'
                     node['city'] = 'Unknown'
             

@@ -93,6 +93,45 @@ https://raw.githubusercontent.com/EseeEhin/cf-ip/main/优选IP.txt
 - **Name**: `QUERY_LIMIT`
 - **Value**: `100` （默认值，可修改为50、200等）
 
+### Cloudflare节点真实位置检测
+
+项目支持通过CF-RAY检测获取Cloudflare节点的真实数据中心位置。
+
+#### 功能说明
+
+- ✅ **自动启用**：默认已启用，无需额外配置
+- 🌍 **全球覆盖**：支持100+个Cloudflare数据中心
+- 🎯 **精确定位**：显示真实的国家和城市（如：JP-Tokyo、HK-Hong Kong）
+- 🔄 **自动回退**：检测失败时自动回退到CF-Anycast标记
+
+#### 启用方法
+
+默认已启用，无需额外配置。
+
+#### 禁用方法
+
+如果需要禁用CF-RAY检测，在`.env`文件中设置：
+
+```env
+CF_RAY_DETECTION_ENABLED=false
+```
+
+#### 效果对比
+
+**启用前**：
+```
+104.16.132.229:443#A-CF-Anycast
+```
+
+**启用后**：
+```
+104.16.132.229:443#A-JP-Tokyo
+```
+
+#### 详细说明
+
+更多配置选项和技术细节，请参考：[CF_RAY_DETECTION.md](CF_RAY_DETECTION.md)
+
 ## ❓ 常见问题
 
 ### Q: Actions运行失败怎么办？

@@ -1,6 +1,7 @@
 """
 IP地理位置查询模块
 使用本地GeoIP数据库（MaxMind GeoLite2）进行查询
+支持通过CF-RAY检测Cloudflare节点的真实数据中心位置
 """
 
 import json
@@ -12,6 +13,14 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 import ipaddress
+
+# 导入CF-RAY检测模块
+try:
+    from . import cf_ray_detector
+    CF_RAY_AVAILABLE = True
+except ImportError:
+    CF_RAY_AVAILABLE = False
+    logging.warning("CF-RAY检测模块不可用")
 
 logger = logging.getLogger(__name__)
 
@@ -169,12 +178,52 @@ class GeoIPDatabase:
         except:
             return False
     
-    def query(self, ip: str) -> Optional[Dict]:
+    def _detect_cf_ray_location(self, ip: str, port: int = 443) -> Optional[Dict]:
+        """
+        通过CF-RAY检测Cloudflare节点的真实数据中心位置
+        
+        Args:
+            ip: Cloudflare IP地址
+            port: 端口号，默认443
+        
+        Returns:
+            位置信息字典，失败返回None
+        """
+        if not CF_RAY_AVAILABLE:
+            return None
+        
+        try:
+            # 从配置中获取超时时间
+            from .config import Config
+            config = Config()
+            timeout = getattr(config, 'cf_ray_timeout', 5)
+            
+            # 调用CF-RAY检测
+            result = cf_ray_detector.get_cloudflare_colo(ip, port, timeout)
+            
+            if result.get('success'):
+                return {
+                    'country': result['country'],
+                    'country_name': result['country'],
+                    'city': result['city'],
+                    'ip': ip,
+                    'source': 'CF-RAY',
+                    'colo': result['colo']
+                }
+            
+            return None
+        
+        except Exception as e:
+            logger.debug(f"CF-RAY检测异常: {ip}:{port}, {e}")
+            return None
+    
+    def query(self, ip: str, port: int = 443) -> Optional[Dict]:
         """
         查询IP的地理位置
         
         Args:
             ip: IP地址
+            port: 端口号（用于CF-RAY检测），默认443
             
         Returns:
             地理位置信息，失败返回None
@@ -185,16 +234,29 @@ class GeoIPDatabase:
             
             # 检查是否为Cloudflare IP
             # Cloudflare使用Anycast，地理位置数据库通常无法准确定位
-            # 我们标记为CF（Cloudflare）而不是具体国家
             if self._is_cloudflare_ip(ip):
-                logger.debug(f"检测到Cloudflare IP: {ip}")
-                return {
-                    'country': 'CF',
-                    'country_name': 'Cloudflare',
-                    'city': 'Anycast',
-                    'ip': ip,
-                    'source': 'Cloudflare-Detection'
-                }
+                logger.debug(f"检测到Cloudflare IP: {ip}:{port}")
+                
+                # 尝试通过CF-RAY获取真实位置
+                cf_location = self._detect_cf_ray_location(ip, port)
+                
+                if cf_location:
+                    logger.info(
+                        f"CF-RAY检测成功: {ip}:{port} -> "
+                        f"{cf_location.get('colo', 'Unknown')} "
+                        f"({cf_location['city']}, {cf_location['country']})"
+                    )
+                    return cf_location
+                else:
+                    # CF-RAY检测失败，回退到默认标记
+                    logger.debug(f"CF-RAY检测失败: {ip}:{port}，使用默认标记")
+                    return {
+                        'country': 'CF',
+                        'country_name': 'Cloudflare',
+                        'city': 'Anycast',
+                        'ip': ip,
+                        'source': 'Cloudflare-Range'
+                    }
             
             # 优先使用城市数据库
             if self.reader_city:
@@ -268,17 +330,18 @@ class IPLocationQuery:
         if not self.geoip_db.ensure_databases():
             logger.warning("GeoIP数据库不可用，将返回Unknown")
     
-    def query(self, ip: str) -> Dict:
+    def query(self, ip: str, port: int = 443) -> Dict:
         """
         查询IP的地理位置
         
         Args:
             ip: IP地址
+            port: 端口号（用于CF-RAY检测），默认443
             
         Returns:
             地理位置信息
         """
-        result = self.geoip_db.query(ip)
+        result = self.geoip_db.query(ip, port)
         
         if result:
             logger.debug(f"查询成功: {ip} -> {result['country']}-{result['city']}")
@@ -324,12 +387,13 @@ class IPLocationQuery:
 _query = None
 
 
-def get_ip_location(ip: str) -> Dict:
+def get_ip_location(ip: str, port: int = 443) -> Dict:
     """
     获取IP的地理位置（便捷函数）
     
     Args:
         ip: IP地址
+        port: 端口号（用于CF-RAY检测），默认443
         
     Returns:
         地理位置信息
@@ -339,7 +403,7 @@ def get_ip_location(ip: str) -> Dict:
     if _query is None:
         _query = IPLocationQuery()
     
-    return _query.query(ip)
+    return _query.query(ip, port)
 
 
 def get_ip_locations_batch(ips: List[str]) -> Dict[str, Dict]:

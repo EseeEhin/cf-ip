@@ -52,6 +52,11 @@ class Config:
         self.request_timeout: int = int(os.getenv('REQUEST_TIMEOUT', '30'))
         self.max_retries: int = int(os.getenv('MAX_RETRIES', '3'))
         
+        # CF-RAY检测配置（用于获取Cloudflare节点真实位置）
+        self.cf_ray_detection_enabled: bool = os.getenv('CF_RAY_DETECTION_ENABLED', 'true').lower() == 'true'
+        self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '5'))
+        self.cf_ray_max_workers: int = int(os.getenv('CF_RAY_MAX_WORKERS', '10'))
+        
         # 日志配置
         self.log_level: str = os.getenv('LOG_LEVEL', 'INFO')
         self.log_file: str = os.getenv('LOG_FILE', 'logs/ip_fetcher.log')
@@ -110,3 +115,8 @@ SUBSCRIPTION_API_URL = _config.subscription_api_url
 SUBSCRIPTION_API_PATH = _config.subscription_api_path
 API_UPLOAD_ENABLED = _config.api_upload_enabled
 API_TIMEOUT = _config.request_timeout
+
+# CF-RAY检测配置
+CF_RAY_DETECTION_ENABLED = _config.cf_ray_detection_enabled
+CF_RAY_TIMEOUT = _config.cf_ray_timeout
+CF_RAY_MAX_WORKERS = _config.cf_ray_max_workers
