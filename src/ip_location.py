@@ -1,269 +1,276 @@
 """
 IP地理位置查询模块
-支持多个API源和本地缓存
+使用本地GeoIP数据库（MaxMind GeoLite2）进行查询
 """
 
 import json
-import time
 import logging
+import gzip
+import shutil
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta
-from collections import deque
 from typing import Dict, Optional, List
+import ipaddress
 
 logger = logging.getLogger(__name__)
 
 
-class RateLimiter:
-    """API速率限制器"""
+class GeoIPDatabase:
+    """本地GeoIP数据库管理器"""
     
-    def __init__(self, max_requests: int = 40, time_window: int = 60):
+    # 使用免费的GeoLite2数据库镜像
+    DB_URLS = {
+        'country': 'https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb',
+        'city': 'https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-City.mmdb'
+    }
+    
+    def __init__(self, db_dir: str = 'cache/geoip'):
         """
-        初始化速率限制器
+        初始化GeoIP数据库管理器
         
         Args:
-            max_requests: 时间窗口内最大请求数
-            time_window: 时间窗口（秒）
+            db_dir: 数据库文件目录
         """
-        self.max_requests = max_requests
-        self.time_window = time_window
-        self.requests = deque()
+        self.db_dir = Path(db_dir)
+        self.db_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.country_db_path = self.db_dir / 'GeoLite2-Country.mmdb'
+        self.city_db_path = self.db_dir / 'GeoLite2-City.mmdb'
+        
+        self.reader_country = None
+        self.reader_city = None
+        
+        # 尝试加载数据库
+        self._load_databases()
     
-    def wait_if_needed(self):
-        """如果达到速率限制，等待直到可以继续"""
-        now = time.time()
-        
-        # 移除时间窗口外的请求记录
-        while self.requests and self.requests[0] < now - self.time_window:
-            self.requests.popleft()
-        
-        # 如果达到限制，等待
-        if len(self.requests) >= self.max_requests:
-            sleep_time = self.time_window - (now - self.requests[0]) + 1
-            if sleep_time > 0:
-                logger.warning(f"达到API速率限制，等待 {sleep_time:.1f} 秒...")
-                time.sleep(sleep_time)
-                self.requests.clear()
-        
-        # 记录本次请求
-        self.requests.append(time.time())
-
-
-class IPLocationCache:
-    """IP地理位置缓存管理器"""
-    
-    def __init__(self, cache_file: str = 'cache/ip_location_cache.json', cache_days: int = 30):
-        """
-        初始化缓存管理器
-        
-        Args:
-            cache_file: 缓存文件路径
-            cache_days: 缓存有效期（天）
-        """
-        self.cache_file = Path(cache_file)
-        self.cache_days = cache_days
-        self.cache = self._load_cache()
-        
-        # 确保缓存目录存在
-        self.cache_file.parent.mkdir(parents=True, exist_ok=True)
-    
-    def _load_cache(self) -> Dict:
-        """加载缓存文件"""
+    def _load_databases(self):
+        """加载GeoIP数据库"""
         try:
-            if self.cache_file.exists():
-                with open(self.cache_file, 'r', encoding='utf-8') as f:
-                    cache_data = json.load(f)
-                    logger.info(f"加载缓存文件成功，包含 {len(cache_data.get('ips', {}))} 个IP记录")
-                    return cache_data
-        except Exception as e:
-            logger.warning(f"加载缓存文件失败: {e}")
-        
-        return {
-            'cache_version': '1.0',
-            'last_updated': datetime.now().isoformat(),
-            'ips': {}
-        }
+            import geoip2.database
+            
+            # 加载国家数据库
+            if self.country_db_path.exists():
+                try:
+                    self.reader_country = geoip2.database.Reader(str(self.country_db_path))
+                    logger.info(f"成功加载国家数据库: {self.country_db_path}")
+                except Exception as e:
+                    logger.warning(f"加载国家数据库失败: {e}")
+            
+            # 加载城市数据库
+            if self.city_db_path.exists():
+                try:
+                    self.reader_city = geoip2.database.Reader(str(self.city_db_path))
+                    logger.info(f"成功加载城市数据库: {self.city_db_path}")
+                except Exception as e:
+                    logger.warning(f"加载城市数据库失败: {e}")
+                    
+        except ImportError:
+            logger.error("未安装 geoip2 库，请运行: pip install geoip2")
     
-    def save_cache(self):
-        """保存缓存到文件"""
-        try:
-            self.cache['last_updated'] = datetime.now().isoformat()
-            with open(self.cache_file, 'w', encoding='utf-8') as f:
-                json.dump(self.cache, f, indent=2, ensure_ascii=False)
-            logger.debug(f"缓存已保存，共 {len(self.cache['ips'])} 个IP记录")
-        except Exception as e:
-            logger.error(f"保存缓存文件失败: {e}")
-    
-    def get(self, ip: str) -> Optional[Dict]:
+    def download_database(self, db_type: str = 'city') -> bool:
         """
-        从缓存获取IP的地理位置
+        下载GeoIP数据库
         
         Args:
-            ip: IP地址
+            db_type: 数据库类型 ('country' 或 'city')
             
         Returns:
-            地理位置信息，如果缓存未命中或已过期则返回None
+            bool: 是否下载成功
         """
-        if ip not in self.cache['ips']:
-            return None
+        if db_type not in self.DB_URLS:
+            logger.error(f"不支持的数据库类型: {db_type}")
+            return False
         
-        cached_data = self.cache['ips'][ip]
+        url = self.DB_URLS[db_type]
+        db_path = self.country_db_path if db_type == 'country' else self.city_db_path
         
         try:
-            cached_time = datetime.fromisoformat(cached_data['cached_at'])
+            logger.info(f"正在下载 {db_type} 数据库: {url}")
             
-            # 检查是否过期
-            if datetime.now() - cached_time > timedelta(days=self.cache_days):
-                logger.debug(f"IP {ip} 的缓存已过期")
-                return None
+            response = requests.get(url, stream=True, timeout=300)
+            response.raise_for_status()
             
-            logger.debug(f"缓存命中: {ip} -> {cached_data['country']}-{cached_data['city']}")
-            return cached_data
+            # 保存到临时文件
+            temp_path = db_path.with_suffix('.tmp')
+            with open(temp_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            # 移动到最终位置
+            shutil.move(str(temp_path), str(db_path))
+            
+            logger.info(f"成功下载 {db_type} 数据库到: {db_path}")
+            
+            # 重新加载数据库
+            self._load_databases()
+            
+            return True
+            
         except Exception as e:
-            logger.warning(f"解析缓存数据失败: {e}")
-            return None
+            logger.error(f"下载 {db_type} 数据库失败: {e}")
+            return False
     
-    def set(self, ip: str, location_data: Dict):
+    def ensure_databases(self) -> bool:
         """
-        设置IP的地理位置到缓存
-        
-        Args:
-            ip: IP地址
-            location_data: 地理位置信息
-        """
-        self.cache['ips'][ip] = {
-            **location_data,
-            'cached_at': datetime.now().isoformat(),
-            'query_count': self.cache['ips'].get(ip, {}).get('query_count', 0) + 1
-        }
-    
-    def cleanup_expired(self) -> int:
-        """
-        清理过期的缓存
+        确保数据库文件存在，如果不存在则下载
         
         Returns:
-            清理的记录数
+            bool: 数据库是否可用
         """
-        now = datetime.now()
-        expired_ips = []
+        # 检查城市数据库（优先）
+        if not self.city_db_path.exists():
+            logger.info("城市数据库不存在，开始下载...")
+            if not self.download_database('city'):
+                logger.warning("城市数据库下载失败，尝试下载国家数据库...")
+                if not self.download_database('country'):
+                    logger.error("所有数据库下载失败")
+                    return False
         
-        for ip, data in self.cache['ips'].items():
-            try:
-                cached_time = datetime.fromisoformat(data['cached_at'])
-                if now - cached_time > timedelta(days=self.cache_days):
-                    expired_ips.append(ip)
-            except:
-                expired_ips.append(ip)  # 无效的缓存数据也删除
+        # 检查国家数据库（备用）
+        if not self.country_db_path.exists():
+            logger.info("国家数据库不存在，开始下载...")
+            self.download_database('country')
         
-        for ip in expired_ips:
-            del self.cache['ips'][ip]
-        
-        if expired_ips:
-            self.save_cache()
-            logger.info(f"清理了 {len(expired_ips)} 个过期缓存记录")
-        
-        return len(expired_ips)
+        return self.reader_city is not None or self.reader_country is not None
     
-    def get_stats(self) -> Dict:
-        """获取缓存统计信息"""
-        return {
-            'total_ips': len(self.cache['ips']),
-            'last_updated': self.cache.get('last_updated', 'Unknown'),
-            'cache_file': str(self.cache_file),
-            'cache_days': self.cache_days
-        }
-
-
-class IPLocationQuery:
-    """IP地理位置查询器（支持多个API源）"""
-    
-    # 多个免费API源
-    API_SOURCES = [
-        {
-            'name': 'ip-api.com',
-            'url': 'http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,query',
-            'rate_limit': 45,  # 每分钟45次
-            'parse': lambda data: {
-                'country': data.get('countryCode', 'Unknown'),
-                'country_name': data.get('country', 'Unknown'),
-                'city': data.get('city', 'Unknown'),
-                'ip': data.get('query', '')
-            } if data.get('status') == 'success' else None
-        },
-        {
-            'name': 'ipapi.co',
-            'url': 'https://ipapi.co/{ip}/json/',
-            'rate_limit': 30,  # 每分钟30次（保守估计）
-            'parse': lambda data: {
-                'country': data.get('country_code', 'Unknown'),
-                'country_name': data.get('country_name', 'Unknown'),
-                'city': data.get('city', 'Unknown'),
-                'ip': data.get('ip', '')
-            } if 'error' not in data else None
-        }
-    ]
-    
-    def __init__(self, cache: IPLocationCache, timeout: int = 10):
+    def _is_cloudflare_ip(self, ip: str) -> bool:
         """
-        初始化查询器
-        
-        Args:
-            cache: 缓存管理器
-            timeout: 请求超时时间（秒）
+        检查是否为Cloudflare IP段
+        Cloudflare使用Anycast，这些IP在全球多个位置都有
         """
-        self.cache = cache
-        self.timeout = timeout
-        self.rate_limiters = {
-            source['name']: RateLimiter(max_requests=source['rate_limit'] - 5)
-            for source in self.API_SOURCES
-        }
-        self.current_source_index = 0
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # Cloudflare的主要IP段
+            cloudflare_ranges = [
+                '173.245.48.0/20',
+                '103.21.244.0/22',
+                '103.22.200.0/22',
+                '103.31.4.0/22',
+                '141.101.64.0/18',
+                '108.162.192.0/18',
+                '190.93.240.0/20',
+                '188.114.96.0/20',
+                '197.234.240.0/22',
+                '198.41.128.0/17',
+                '162.158.0.0/15',
+                '104.16.0.0/13',
+                '104.24.0.0/14',
+                '172.64.0.0/13',
+                '131.0.72.0/22',
+            ]
+            
+            for cidr in cloudflare_ranges:
+                if ip_obj in ipaddress.ip_network(cidr):
+                    return True
+            
+            return False
+        except:
+            return False
     
-    def _query_api(self, ip: str, source: Dict) -> Optional[Dict]:
+    def query(self, ip: str) -> Optional[Dict]:
         """
-        查询单个API源
+        查询IP的地理位置
         
         Args:
             ip: IP地址
-            source: API源配置
             
         Returns:
             地理位置信息，失败返回None
         """
         try:
-            # 速率限制
-            rate_limiter = self.rate_limiters[source['name']]
-            rate_limiter.wait_if_needed()
+            # 验证IP地址
+            ipaddress.ip_address(ip)
             
-            # 发送请求
-            url = source['url'].format(ip=ip)
-            response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
+            # 检查是否为Cloudflare IP
+            # Cloudflare使用Anycast，地理位置数据库通常无法准确定位
+            # 我们标记为CF（Cloudflare）而不是具体国家
+            if self._is_cloudflare_ip(ip):
+                logger.debug(f"检测到Cloudflare IP: {ip}")
+                return {
+                    'country': 'CF',
+                    'country_name': 'Cloudflare',
+                    'city': 'Anycast',
+                    'ip': ip,
+                    'source': 'Cloudflare-Detection'
+                }
             
-            # 解析响应
-            data = response.json()
-            location = source['parse'](data)
+            # 优先使用城市数据库
+            if self.reader_city:
+                try:
+                    response = self.reader_city.city(ip)
+                    country_code = response.country.iso_code
+                    country_name = response.country.name
+                    city_name = response.city.name
+                    
+                    # 如果有有效数据则返回
+                    if country_code:
+                        return {
+                            'country': country_code,
+                            'country_name': country_name or 'Unknown',
+                            'city': city_name or 'Unknown',
+                            'ip': ip,
+                            'source': 'GeoLite2-City'
+                        }
+                except Exception as e:
+                    logger.debug(f"城市数据库查询失败: {ip}, {e}")
             
-            if location:
-                logger.info(f"[{source['name']}] 查询成功: {ip} -> {location['country']}-{location['city']}")
-                return location
-            else:
-                logger.warning(f"[{source['name']}] 查询失败: {ip}")
-                return None
-                
-        except requests.exceptions.Timeout:
-            logger.warning(f"[{source['name']}] 请求超时: {ip}")
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"[{source['name']}] 请求失败: {ip}, 错误: {e}")
+            # 备用：使用国家数据库
+            if self.reader_country:
+                try:
+                    response = self.reader_country.country(ip)
+                    country_code = response.country.iso_code
+                    country_name = response.country.name
+                    
+                    if country_code:
+                        return {
+                            'country': country_code,
+                            'country_name': country_name or 'Unknown',
+                            'city': 'Unknown',
+                            'ip': ip,
+                            'source': 'GeoLite2-Country'
+                        }
+                except Exception as e:
+                    logger.debug(f"国家数据库查询失败: {ip}, {e}")
+            
+            logger.warning(f"无可用数据库查询IP: {ip}")
+            return None
+            
+        except ValueError:
+            logger.error(f"无效的IP地址: {ip}")
+            return None
         except Exception as e:
-            logger.error(f"[{source['name']}] 查询异常: {ip}, 错误: {e}")
+            logger.error(f"查询IP地理位置失败: {ip}, {e}")
+            return None
+    
+    def close(self):
+        """关闭数据库连接"""
+        if self.reader_city:
+            self.reader_city.close()
+        if self.reader_country:
+            self.reader_country.close()
+
+
+class IPLocationQuery:
+    """IP地理位置查询器（使用本地数据库）"""
+    
+    def __init__(self, db_dir: str = 'cache/geoip'):
+        """
+        初始化查询器
         
-        return None
+        Args:
+            db_dir: 数据库文件目录
+        """
+        self.geoip_db = GeoIPDatabase(db_dir)
+        
+        # 确保数据库可用
+        if not self.geoip_db.ensure_databases():
+            logger.warning("GeoIP数据库不可用，将返回Unknown")
     
     def query(self, ip: str) -> Dict:
         """
-        查询IP的地理位置（带缓存和多源轮询）
+        查询IP的地理位置
         
         Args:
             ip: IP地址
@@ -271,41 +278,28 @@ class IPLocationQuery:
         Returns:
             地理位置信息
         """
-        # 1. 尝试从缓存获取
-        cached = self.cache.get(ip)
-        if cached:
-            return cached
+        result = self.geoip_db.query(ip)
         
-        # 2. 缓存未命中，查询API（尝试所有源）
-        for i in range(len(self.API_SOURCES)):
-            source_index = (self.current_source_index + i) % len(self.API_SOURCES)
-            source = self.API_SOURCES[source_index]
-            
-            location = self._query_api(ip, source)
-            if location:
-                # 查询成功，更新缓存
-                self.cache.set(ip, location)
-                self.current_source_index = source_index  # 记住成功的源
-                return location
+        if result:
+            logger.debug(f"查询成功: {ip} -> {result['country']}-{result['city']}")
+            return result
         
-        # 3. 所有源都失败，返回默认值
-        logger.error(f"所有API源查询失败: {ip}")
-        default_location = {
+        # 查询失败，返回默认值
+        logger.warning(f"查询失败，返回默认值: {ip}")
+        return {
             'country': 'Unknown',
             'country_name': 'Unknown',
             'city': 'Unknown',
-            'ip': ip
+            'ip': ip,
+            'source': 'fallback'
         }
-        self.cache.set(ip, default_location)
-        return default_location
     
-    def query_batch(self, ips: List[str], save_interval: int = 10) -> Dict[str, Dict]:
+    def query_batch(self, ips: List[str]) -> Dict[str, Dict]:
         """
         批量查询IP地理位置
         
         Args:
             ips: IP地址列表
-            save_interval: 每查询多少个IP保存一次缓存
             
         Returns:
             IP到地理位置的映射
@@ -315,54 +309,35 @@ class IPLocationQuery:
         for i, ip in enumerate(ips, 1):
             results[ip] = self.query(ip)
             
-            # 定期保存缓存
-            if i % save_interval == 0:
-                self.cache.save_cache()
+            if i % 100 == 0:
                 logger.info(f"批量查询进度: {i}/{len(ips)}")
         
-        # 最后保存一次
-        self.cache.save_cache()
         logger.info(f"批量查询完成: {len(ips)} 个IP")
-        
         return results
+    
+    def close(self):
+        """关闭数据库连接"""
+        self.geoip_db.close()
 
 
 # 全局实例
-_cache = None
 _query = None
 
 
-def get_ip_location(ip: str, use_cache: bool = True) -> Dict:
+def get_ip_location(ip: str) -> Dict:
     """
     获取IP的地理位置（便捷函数）
     
     Args:
         ip: IP地址
-        use_cache: 是否使用缓存
         
     Returns:
         地理位置信息
     """
-    global _cache, _query
-    
-    if _cache is None:
-        _cache = IPLocationCache()
+    global _query
     
     if _query is None:
-        _query = IPLocationQuery(_cache)
-    
-    if not use_cache:
-        # 不使用缓存，直接查询
-        for source in IPLocationQuery.API_SOURCES:
-            location = _query._query_api(ip, source)
-            if location:
-                return location
-        return {
-            'country': 'Unknown',
-            'country_name': 'Unknown',
-            'city': 'Unknown',
-            'ip': ip
-        }
+        _query = IPLocationQuery()
     
     return _query.query(ip)
 
@@ -377,35 +352,35 @@ def get_ip_locations_batch(ips: List[str]) -> Dict[str, Dict]:
     Returns:
         IP到地理位置的映射
     """
-    global _cache, _query
-    
-    if _cache is None:
-        _cache = IPLocationCache()
+    global _query
     
     if _query is None:
-        _query = IPLocationQuery(_cache)
+        _query = IPLocationQuery()
     
     return _query.query_batch(ips)
 
 
-def cleanup_cache():
-    """清理过期缓存（便捷函数）"""
-    global _cache
+def download_geoip_database(db_type: str = 'city') -> bool:
+    """
+    下载GeoIP数据库（便捷函数）
     
-    if _cache is None:
-        _cache = IPLocationCache()
-    
-    return _cache.cleanup_expired()
+    Args:
+        db_type: 数据库类型 ('country' 或 'city')
+        
+    Returns:
+        bool: 是否下载成功
+    """
+    db = GeoIPDatabase()
+    return db.download_database(db_type)
 
 
-def get_cache_stats() -> Dict:
-    """获取缓存统计信息（便捷函数）"""
-    global _cache
+def close_database():
+    """关闭数据库连接（便捷函数）"""
+    global _query
     
-    if _cache is None:
-        _cache = IPLocationCache()
-    
-    return _cache.get_stats()
+    if _query is not None:
+        _query.close()
+        _query = None
 
 
 if __name__ == '__main__':
@@ -417,16 +392,17 @@ if __name__ == '__main__':
     
     # 测试单个IP查询
     test_ips = [
-        '172.64.229.95',
-        '162.159.45.47',
-        '108.162.198.110'
+        '172.64.229.95',  # Cloudflare IP
+        '162.159.45.47',  # Cloudflare IP
+        '108.162.198.110',  # Cloudflare IP
+        '8.8.8.8',  # Google DNS (US)
+        '1.1.1.1',  # Cloudflare DNS
     ]
     
     print("测试IP地理位置查询:")
     for ip in test_ips:
         location = get_ip_location(ip)
-        print(f"{ip} -> {location['country']}-{location['city']}")
+        print(f"{ip} -> {location['country']}-{location['city']} (来源: {location.get('source', 'unknown')})")
     
-    # 显示缓存统计
-    stats = get_cache_stats()
-    print(f"\n缓存统计: {stats}")
+    # 关闭数据库
+    close_database()

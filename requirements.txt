@@ -12,6 +12,10 @@ PyGithub==2.1.1
 # 日志和工具
 python-dateutil==2.8.2
 
+# GeoIP地理位置查询
+geoip2==4.7.0
+maxminddb==2.5.1
+
 # 可选：如果需要使用playwright进行JavaScript渲染
 # playwright==1.40.0
 # 安装后需要运行: playwright install chromium
