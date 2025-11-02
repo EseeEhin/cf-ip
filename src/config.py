@@ -167,3 +167,10 @@ CF_RAY_TIMEOUT = _config.cf_ray_timeout
 CF_RAY_MAX_WORKERS = _config.cf_ray_max_workers
 CF_RAY_MAX_RETRIES = _config.cf_ray_max_retries
 PREFER_CFRAY_FOR_CF_IPS = _config.prefer_cfray_for_cf_ips
+
+# 来源D配置（ipdb.api.030101.xyz）
+SOURCE_D_ENABLED = os.getenv('SOURCE_D_ENABLED', 'true').lower() == 'true'
+SOURCE_D_BESTPROXY_URL = "https://ipdb.api.030101.xyz/?type=bestproxy&country=true"
+SOURCE_D_BESTCF_URL = "https://ipdb.api.030101.xyz/?type=bestcf"
+SOURCE_D_ENABLE_BESTPROXY = os.getenv('SOURCE_D_ENABLE_BESTPROXY', 'true').lower() == 'true'
+SOURCE_D_ENABLE_BESTCF = os.getenv('SOURCE_D_ENABLE_BESTCF', 'true').lower() == 'true'

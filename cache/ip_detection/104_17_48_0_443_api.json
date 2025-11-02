@@ -1,0 +1,14 @@
+{
+  "data": {
+    "country": "US",
+    "country_name": "美国",
+    "city": "紐華克",
+    "isp": "Cloudflare, Inc.",
+    "source": "ip_api_com",
+    "confidence": 0.95,
+    "ip": "104.17.48.0"
+  },
+  "timestamp": 1762089847.4386601,
+  "ttl": 43200,
+  "cache_type": "api"
+}

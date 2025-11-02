@@ -335,16 +335,158 @@ class SourceC(DataSource):
             return nodes
 
 
+class SourceD(DataSource):
+    """来源D: ipdb.api.030101.xyz API"""
+    
+    def __init__(self):
+        super().__init__("来源D", "D")
+        from . import config
+        self.bestproxy_url = config.SOURCE_D_BESTPROXY_URL
+        self.bestcf_url = config.SOURCE_D_BESTCF_URL
+        self.enable_bestproxy = config.SOURCE_D_ENABLE_BESTPROXY
+        self.enable_bestcf = config.SOURCE_D_ENABLE_BESTCF
+    
+    def fetch(self, countries: List[str] = None, **kwargs) -> List[Dict]:
+        """
+        从ipdb.api.030101.xyz获取IP数据
+        支持两种类型：
+        - bestproxy: 优选反代IP（已包含地区信息）
+        - bestcf: Cloudflare优选IP（需要地区检测）
+        
+        Args:
+            countries: 国家代码列表
+            
+        Returns:
+            List[Dict]: 节点列表
+        """
+        if countries is None:
+            countries = ['JP', 'HK', 'US']
+        
+        nodes = []
+        
+        # 1. 获取 bestproxy（已有地区信息）
+        if self.enable_bestproxy:
+            try:
+                logger.info(f"[{self.name}] 正在获取 bestproxy 数据...")
+                response = self.session.get(self.bestproxy_url, timeout=10)
+                response.raise_for_status()
+                
+                lines = response.text.strip().split('\n')
+                for line in lines:
+                    if '#' in line:
+                        ip, country = line.strip().split('#')
+                        # 过滤国家
+                        if country in countries:
+                            node = {
+                                'ip': ip.strip(),
+                                'port': '443',
+                                'country': country,
+                                'city': '',
+                                'source': self.prefix,
+                                'type': 'proxy'  # 标记为反代
+                            }
+                            nodes.append(node)
+                
+                logger.info(f"[{self.name}] bestproxy 获取到 {len([n for n in nodes if n.get('type') == 'proxy'])} 个节点")
+            except Exception as e:
+                logger.error(f"[{self.name}] bestproxy 获取失败: {e}")
+        
+        # 2. 获取 bestcf（需要地区检测）
+        if self.enable_bestcf:
+            try:
+                logger.info(f"[{self.name}] 正在获取 bestcf 数据...")
+                response = self.session.get(self.bestcf_url, timeout=10)
+                response.raise_for_status()
+                
+                lines = response.text.strip().split('\n')
+                ips = [line.strip() for line in lines if line.strip()]
+                
+                logger.info(f"[{self.name}] bestcf 解析出 {len(ips)} 个有效IP")
+                
+                # 地区检测
+                if ips:
+                    logger.info(f"[{self.name}] 正在查询 {len(ips)} 个IP的地理位置...")
+                    cf_nodes = self._detect_locations_batch(ips, countries)
+                    nodes.extend(cf_nodes)
+                    
+                    logger.info(f"[{self.name}] bestcf 获取到 {len([n for n in nodes if n.get('type') == 'cf'])} 个节点")
+            except Exception as e:
+                logger.error(f"[{self.name}] bestcf 获取失败: {e}")
+        
+        logger.info(f"[{self.name}] 共获取 {len(nodes)} 个节点")
+        return nodes
+    
+    def _detect_locations_batch(self, ips: List[str], countries: List[str]) -> List[Dict]:
+        """批量检测IP地理位置"""
+        try:
+            from .ip_location import get_ip_location
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            from .config import Config
+            
+            # 获取并发配置
+            config = Config()
+            max_workers = getattr(config, 'cf_ray_max_workers', 5)
+            
+            nodes = []
+            
+            # 使用线程池并发查询
+            def query_location(ip):
+                try:
+                    location = get_ip_location(ip, 443)
+                    country = location.get('country', 'Unknown')
+                    city = location.get('city', 'Unknown')
+                    
+                    # 过滤国家
+                    if country in countries:
+                        return {
+                            'ip': ip,
+                            'port': '443',
+                            'country': country,
+                            'city': city,
+                            'source': self.prefix,
+                            'type': 'cf'  # 标记为CF原生IP
+                        }
+                    return None
+                except Exception as e:
+                    logger.debug(f"查询 {ip}:443 位置失败: {e}")
+                    return None
+            
+            # 并发查询所有节点
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(query_location, ip): ip for ip in ips}
+                
+                for future in as_completed(futures):
+                    try:
+                        node = future.result()
+                        if node:
+                            nodes.append(node)
+                    except Exception as e:
+                        ip = futures[future]
+                        logger.error(f"查询 {ip} 异常: {e}")
+            
+            return nodes
+            
+        except Exception as e:
+            logger.error(f"[{self.name}] 批量查询地理位置失败: {e}")
+            return []
+
+
 class MultiSourceFetcher:
     """多数据源获取器"""
     
     def __init__(self):
         """初始化多数据源获取器"""
+        from . import config
+        
         self.sources = [
             SourceA(),
             SourceB(),
             SourceC()
         ]
+        
+        # 添加来源D（如果启用）
+        if config.SOURCE_D_ENABLED:
+            self.sources.append(SourceD())
     
     def fetch_all(self, countries: List[str] = None, limit: int = 10) -> List[Dict]:
         """
@@ -397,9 +539,20 @@ class MultiSourceFetcher:
             source = node.get('source', '')
             country = node.get('country', 'Unknown')
             city = node.get('city', 'Unknown')
+            node_type = node.get('type', '')
             
-            # 格式: IP:端口#来源-国家-城市
-            node_str = f"{ip}:{port}#{source}-{country}-{city}"
+            # 基础格式: IP:端口#来源-国家-城市
+            if city:
+                node_str = f"{ip}:{port}#{source}-{country}-{city}"
+            else:
+                node_str = f"{ip}:{port}#{source}-{country}"
+            
+            # 添加类型标记（仅用于来源D）
+            if node_type == 'proxy':
+                node_str += " [Proxy]"
+            elif node_type == 'cf':
+                node_str += " [CF]"
+            
             formatted.append(node_str)
         
         return '\n'.join(formatted)
