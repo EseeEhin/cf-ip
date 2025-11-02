@@ -35,13 +35,13 @@ class Config:
         self.cache_days: int = int(os.getenv('CACHE_DAYS', '30'))
         
         # 输出配置
-        self.output_file: str = os.getenv('OUTPUT_FILE', 'output/优选IP.txt')
+        self.output_file: str = os.getenv('OUTPUT_FILE', 'output/optimal-ips.txt')
         
         # GitHub配置
         self.github_token: Optional[str] = os.getenv('GITHUB_TOKEN')
         self.github_repo: Optional[str] = os.getenv('GITHUB_REPO')
         self.github_branch: str = os.getenv('GITHUB_BRANCH', 'main')
-        self.github_file_path: str = os.getenv('GITHUB_FILE_PATH', '优选IP.txt')
+        self.github_file_path: str = os.getenv('GITHUB_FILE_PATH', 'optimal-ips.txt')
         
         # 请求配置
         self.request_timeout: int = int(os.getenv('REQUEST_TIMEOUT', '30'))
