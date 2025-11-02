@@ -107,7 +107,7 @@ class SourceB(DataSource):
     """来源B: qwer-search/bestip"""
     
     def __init__(self):
-        super().__init__("来源B", "默认")
+        super().__init__("来源B", "B")
         self.url = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt'
     
     def fetch(self, **kwargs) -> List[Dict]:

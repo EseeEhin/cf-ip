@@ -2,8 +2,9 @@ name: Update Optimal IPs
 
 on:
   schedule:
-    # UTC时间，对应北京时间 8:00, 14:00, 20:00
-    - cron: '0 0,6,12 * * *'
+    # 每3小时运行一次（UTC时间）
+    # 对应北京时间: 2:00, 5:00, 8:00, 11:00, 14:00, 17:00, 20:00, 23:00
+    - cron: '0 */3 * * *'
   workflow_dispatch:  # 允许手动触发
   push:
     branches: [ main ]
