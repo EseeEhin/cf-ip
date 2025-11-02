@@ -11,6 +11,7 @@ API优先级（根据用户反馈优化）：
 
 import time
 import logging
+import ipaddress
 from typing import Dict, Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -29,6 +30,21 @@ from .api_providers import (
 from .detection_cache import DetectionCache, FailureCache
 
 logger = logging.getLogger(__name__)
+
+# Cloudflare的主要IP段
+CLOUDFLARE_IP_RANGES = [
+    '104.16.0.0/13',    # 104.16.0.0 - 104.23.255.255
+    '104.24.0.0/14',    # 104.24.0.0 - 104.27.255.255
+    '172.64.0.0/13',    # 172.64.0.0 - 172.71.255.255
+    '162.159.0.0/16',   # 162.159.0.0 - 162.159.255.255
+    '108.162.192.0/18', # 108.162.192.0 - 108.162.255.255
+    '198.41.128.0/17',  # 198.41.128.0 - 198.41.255.255
+    '173.245.48.0/20',  # 173.245.48.0 - 173.245.63.255
+    '188.114.96.0/20',  # 188.114.96.0 - 188.114.111.255
+    '190.93.240.0/20',  # 190.93.240.0 - 190.93.255.255
+    '197.234.240.0/22', # 197.234.240.0 - 197.234.243.255
+    '131.0.72.0/22',    # 131.0.72.0 - 131.0.75.255
+]
 
 
 class IPDetectorV2:
@@ -127,6 +143,27 @@ class IPDetectorV2:
         
         return manager
     
+    def is_cloudflare_ip(self, ip: str) -> bool:
+        """
+        判断IP是否属于Cloudflare
+        
+        Args:
+            ip: IP地址
+            
+        Returns:
+            bool: 是否为Cloudflare IP
+        """
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            
+            for range_str in CLOUDFLARE_IP_RANGES:
+                if ip_obj in ipaddress.ip_network(range_str):
+                    return True
+            return False
+        except Exception as e:
+            logger.debug(f"判断Cloudflare IP失败: {ip}, {e}")
+            return False
+    
     def detect(self, ip: str, port: int = 443) -> Optional[Dict]:
         """
         检测单个IP的位置信息
@@ -156,20 +193,43 @@ class IPDetectorV2:
                 self.stats['failed'] += 1
                 return None
             
-            # 第一层：CF-RAY检测
-            result = self._try_cf_ray(ip, port)
-            if result:
-                response_time = time.time() - start_time
-                self._cache_and_record(ip, port, result, 'cf_ray', response_time)
-                return result
+            # 判断是否为Cloudflare IP
+            is_cf = self.is_cloudflare_ip(ip)
             
-            # 第二层：第三方API
-            result = self._try_api(ip)
-            if result:
-                response_time = time.time() - start_time
-                cache_type = 'api'
-                self._cache_and_record(ip, port, result, cache_type, response_time)
-                return result
+            if is_cf:
+                # Cloudflare IP：必须优先使用CF-RAY检测
+                logger.info(f"检测到Cloudflare IP: {ip}，优先使用CF-RAY检测")
+                result = self._try_cf_ray(ip, port)
+                if result:
+                    response_time = time.time() - start_time
+                    self._cache_and_record(ip, port, result, 'cf_ray', response_time)
+                    return result
+                
+                # CF-RAY失败，记录警告
+                logger.warning(f"CF-RAY检测失败: {ip}:{port}，第三方API可能不准确")
+                
+                # 尝试第三方API作为备选
+                result = self._try_api(ip)
+                if result:
+                    response_time = time.time() - start_time
+                    logger.warning(f"使用第三方API检测CF IP: {ip}，结果可能不准确 -> {result['city']}, {result['country']}")
+                    self._cache_and_record(ip, port, result, 'api', response_time)
+                    return result
+            else:
+                # 非Cloudflare IP：先尝试第三方API
+                result = self._try_api(ip)
+                if result:
+                    response_time = time.time() - start_time
+                    self._cache_and_record(ip, port, result, 'api', response_time)
+                    return result
+                
+                # API失败，尝试CF-RAY（可能是未知的CF IP段）
+                result = self._try_cf_ray(ip, port)
+                if result:
+                    response_time = time.time() - start_time
+                    logger.info(f"非CF IP段但CF-RAY检测成功: {ip}:{port}")
+                    self._cache_and_record(ip, port, result, 'cf_ray', response_time)
+                    return result
             
             # 第三层：GeoIP数据库
             result = self._try_geoip(ip)

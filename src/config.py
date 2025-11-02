@@ -54,8 +54,12 @@ class Config:
         
         # CF-RAY检测配置（用于获取Cloudflare节点真实位置）
         self.cf_ray_detection_enabled: bool = os.getenv('CF_RAY_DETECTION_ENABLED', 'true').lower() == 'true'
-        self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '15'))  # 增加到15秒
+        self.cf_ray_timeout: int = int(os.getenv('CF_RAY_TIMEOUT', '20'))  # 增加到20秒
         self.cf_ray_max_workers: int = int(os.getenv('CF_RAY_MAX_WORKERS', '5'))  # 减少到5个并发
+        self.cf_ray_max_retries: int = int(os.getenv('CF_RAY_MAX_RETRIES', '3'))  # CF-RAY重试次数
+        
+        # Cloudflare IP优先级配置
+        self.prefer_cfray_for_cf_ips: bool = os.getenv('PREFER_CFRAY_FOR_CF_IPS', 'true').lower() == 'true'
         
         # ==================== IP检测V2配置 ====================
         # 第三方API配置
@@ -161,3 +165,5 @@ API_TIMEOUT = _config.request_timeout
 CF_RAY_DETECTION_ENABLED = _config.cf_ray_detection_enabled
 CF_RAY_TIMEOUT = _config.cf_ray_timeout
 CF_RAY_MAX_WORKERS = _config.cf_ray_max_workers
+CF_RAY_MAX_RETRIES = _config.cf_ray_max_retries
+PREFER_CFRAY_FOR_CF_IPS = _config.prefer_cfray_for_cf_ips
