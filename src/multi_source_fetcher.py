@@ -174,20 +174,38 @@ class SourceB(DataSource):
             
             # 导入get_ip_location以支持端口参数
             from .ip_location import get_ip_location
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            from .config import Config
             
-            # 逐个查询（因为需要传递端口信息）
-            for node in nodes:
+            # 获取并发配置
+            config = Config()
+            max_workers = getattr(config, 'cf_ray_max_workers', 5)
+            
+            # 使用线程池并发查询
+            def query_location(node):
                 ip = node['ip']
                 port = int(node.get('port', 443))
-                
                 try:
                     location = get_ip_location(ip, port)
-                    node['country'] = location.get('country', 'Unknown')
-                    node['city'] = location.get('city', 'Unknown')
+                    return (node, location.get('country', 'Unknown'), location.get('city', 'Unknown'))
                 except Exception as e:
                     logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
-                    node['country'] = 'Unknown'
-                    node['city'] = 'Unknown'
+                    return (node, 'Unknown', 'Unknown')
+            
+            # 并发查询所有节点
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(query_location, node): node for node in nodes}
+                
+                for future in as_completed(futures):
+                    try:
+                        node, country, city = future.result()
+                        node['country'] = country
+                        node['city'] = city
+                    except Exception as e:
+                        node = futures[future]
+                        logger.error(f"查询 {node['ip']} 异常: {e}")
+                        node['country'] = 'Unknown'
+                        node['city'] = 'Unknown'
             
             logger.info(f"[{self.name}] 地理位置查询完成")
             return nodes
@@ -272,20 +290,38 @@ class SourceC(DataSource):
             
             # 导入get_ip_location以支持端口参数
             from .ip_location import get_ip_location
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            from .config import Config
             
-            # 逐个查询（因为需要传递端口信息）
-            for node in nodes:
+            # 获取并发配置
+            config = Config()
+            max_workers = getattr(config, 'cf_ray_max_workers', 5)
+            
+            # 使用线程池并发查询
+            def query_location(node):
                 ip = node['ip']
                 port = int(node.get('port', 443))
-                
                 try:
                     location = get_ip_location(ip, port)
-                    node['country'] = location.get('country', 'Unknown')
-                    node['city'] = location.get('city', 'Unknown')
+                    return (node, location.get('country', 'Unknown'), location.get('city', 'Unknown'))
                 except Exception as e:
                     logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
-                    node['country'] = 'Unknown'
-                    node['city'] = 'Unknown'
+                    return (node, 'Unknown', 'Unknown')
+            
+            # 并发查询所有节点
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(query_location, node): node for node in nodes}
+                
+                for future in as_completed(futures):
+                    try:
+                        node, country, city = future.result()
+                        node['country'] = country
+                        node['city'] = city
+                    except Exception as e:
+                        node = futures[future]
+                        logger.error(f"查询 {node['ip']} 异常: {e}")
+                        node['country'] = 'Unknown'
+                        node['city'] = 'Unknown'
             
             logger.info(f"[{self.name}] 地理位置查询完成")
             return nodes
