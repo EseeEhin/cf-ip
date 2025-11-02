@@ -8,7 +8,7 @@
 import requests
 import json
 from typing import List, Dict, Optional
-from config import (
+from .config import (
     SUBSCRIPTION_API_URL,
     SUBSCRIPTION_API_PATH,
     API_TIMEOUT
