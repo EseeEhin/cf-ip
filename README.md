@@ -15,6 +15,7 @@
 - 🔄 **定时更新** - 可自定义更新频率（默认每6小时）
 - 📊 **详细日志** - 完整的执行日志和错误追踪
 - 🎯 **CF-RAY检测** - 自动识别Cloudflare节点真实数据中心位置
+- 🔧 **yx-tools集成** - 支持非交互式运行 Cloudflare 测速工具
 
 ### 🎯 Cloudflare节点真实位置检测
 
@@ -23,6 +24,17 @@
 - 自动识别并检测Cloudflare IP
 - 检测失败时自动回退到CF-Anycast标记
 - 批量并发检测，性能优化
+
+### 🔧 yx-tools 非交互式运行
+
+本项目集成了 yx-tools 的非交互式包装脚本，可在 GitHub Actions 中自动运行 Cloudflare 测速：
+
+- 完全非交互式运行，无需手动输入
+- 支持命令行参数配置所有选项
+- 自动测试多个地区节点（香港、东京、洛杉矶等）
+- 完善的错误处理和超时控制
+
+详细说明请参考：[YX_TOOLS_USAGE.md](YX_TOOLS_USAGE.md)
 
 详细说明请参考：[CF_RAY_DETECTION.md](CF_RAY_DETECTION.md)
 
