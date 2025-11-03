@@ -24,6 +24,67 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       
+      - name: Run yx-tools speedtest for multiple regions
+        run: |
+          cd yx-tools-2.2.1/yx-tools-2.2.1
+          
+          # 安装 yx-tools 依赖
+          pip install -r requirements.txt
+          
+          # 测试香港节点 (HKG)
+          echo "测试香港节点..."
+          python cloudflare_speedtest.py <<EOF
+          1
+          HKG
+          30
+          300
+          5
+          EOF
+          mv result.csv ../../result_hkg.csv
+          
+          # 测试东京节点 (NRT)
+          echo "测试东京节点..."
+          python cloudflare_speedtest.py <<EOF
+          1
+          NRT
+          30
+          300
+          5
+          EOF
+          mv result.csv ../../result_nrt.csv
+          
+          # 测试洛杉矶节点 (LAX)
+          echo "测试洛杉矶节点..."
+          python cloudflare_speedtest.py <<EOF
+          1
+          LAX
+          30
+          300
+          5
+          EOF
+          mv result.csv ../../result_lax.csv
+          
+          cd ../..
+          
+          # 合并所有结果
+          echo "IP地址,端口,延迟平均值,下载速度,上传速度,机场码" > result.csv
+          awk -F',' 'NR>1 {print $0",HKG"}' result_hkg.csv >> result.csv
+          awk -F',' 'NR>1 {print $0",NRT"}' result_nrt.csv >> result.csv
+          awk -F',' 'NR>1 {print $0",LAX"}' result_lax.csv >> result.csv
+          
+          echo "测速完成，共 $(wc -l < result.csv) 个节点"
+        continue-on-error: true
+      
+      - name: Setup CloudflareSpeedTest
+        run: |
+          chmod +x CloudflareSpeedTest-linux-amd64
+          mv CloudflareSpeedTest-linux-amd64 cfst
+      
+      - name: Run CloudflareSpeedTest
+        run: |
+          ./cfst -n 200 -t 4 -o result_cfst.csv
+        continue-on-error: true
+      
       - name: Run IP fetcher and uploader
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
