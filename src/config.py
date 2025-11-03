@@ -28,7 +28,7 @@ class Config:
         self.filter_countries: List[str] = [c.strip() for c in filter_countries.split(',') if c.strip()]
         
         # 查询限制 - 默认改为10
-        self.query_limit: int = int(os.getenv('QUERY_LIMIT', '10'))
+        self.query_limit: int = int(os.getenv('QUERY_LIMIT', '20'))
         
         # 缓存配置
         self.cache_enabled: bool = os.getenv('CACHE_ENABLED', 'true').lower() == 'true'

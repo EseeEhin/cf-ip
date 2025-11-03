@@ -47,7 +47,7 @@ class SourceA(DataSource):
         super().__init__("来源A", "A")
         self.api_query_url = 'https://cfip.wxgqlfx.fun/api/query'
     
-    def fetch(self, countries: List[str] = None, limit: int = 10, **kwargs) -> List[Dict]:
+    def fetch(self, countries: List[str] = None, limit: int = 20, **kwargs) -> List[Dict]:
         """
         从API获取IP数据
         
@@ -76,7 +76,7 @@ class SourceA(DataSource):
                 response = self.session.post(
                     self.api_query_url,
                     json=payload,
-                    timeout=30
+                    timeout=60  # 增加超时时间以应对慢速API响应
                 )
                 response.raise_for_status()
                 
@@ -224,7 +224,7 @@ class SourceC(DataSource):
     
     def __init__(self):
         super().__init__("来源C", "C")
-        self.url = 'https://raw.githubusercontent.com/tianshipapa/cfipcaiji/main/ip.txt'
+        self.url = 'https://raw.githubusercontent.com/anlish01/cfipcaiji/refs/heads/main/ip.txt'
     
     def fetch(self, **kwargs) -> List[Dict]:
         """
@@ -488,7 +488,7 @@ class MultiSourceFetcher:
         if config.SOURCE_D_ENABLED:
             self.sources.append(SourceD())
     
-    def fetch_all(self, countries: List[str] = None, limit: int = 10) -> List[Dict]:
+    def fetch_all(self, countries: List[str] = None, limit: int = 20) -> List[Dict]:
         """
         从所有数据源获取IP
         
