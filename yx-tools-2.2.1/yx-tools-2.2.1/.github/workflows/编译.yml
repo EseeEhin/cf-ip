@@ -1,0 +1,336 @@
+name: Build All Platforms
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送 v1.0.0 这样的 tag 时触发
+  workflow_dispatch:  # 也支持手动触发
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        include:
+          # Windows x64
+          - os: windows-latest
+            platform: windows
+            arch: amd64
+            ext: .exe
+            
+          # Linux x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: amd64
+            ext: ''
+            
+          # macOS Intel
+          - os: macos-13
+            platform: macos
+            arch: amd64
+            ext: ''
+            
+          # macOS Apple Silicon
+          - os: macos-14
+            platform: macos
+            arch: arm64
+            ext: ''
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          # 确保 SSL 支持
+          pip install --upgrade certifi
+          pip install --upgrade urllib3
+
+      - name: 构建可执行文件 (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          python -m PyInstaller --onefile --name CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }} --clean --console --hidden-import requests --hidden-import urllib3 --hidden-import certifi --hidden-import charset_normalizer --hidden-import idna --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --exclude-module PIL --exclude-module cv2 --exclude-module scipy --strip --optimize 2 cloudflare_speedtest.py
+
+      - name: 构建可执行文件 (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          # 使用验证成功的命令，解决 macOS 符号链接问题
+          python -m PyInstaller --onefile --name CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }} --clean --console --hidden-import requests --hidden-import urllib3 --hidden-import certifi --hidden-import charset_normalizer --hidden-import idna --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --exclude-module PIL --exclude-module cv2 --exclude-module scipy --strip --optimize 2 cloudflare_speedtest.py
+
+      - name: 重命名文件（Windows）
+        if: matrix.platform == 'windows'
+        run: |
+          move dist\CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}.exe dist\CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}
+
+      - name: 赋予执行权限（Linux/macOS）
+        if: matrix.platform != 'windows'
+        run: chmod +x dist/CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}
+
+
+      - name: 构建小白专用版 (Windows)
+        if: matrix.platform == 'windows'
+        shell: powershell
+        run: |
+          # 设置变量避免中文字符问题
+          $packageName = "CloudflareSpeedTest-Beginner-For-Newbies-${{ matrix.platform }}-${{ matrix.arch }}"
+          
+          # 创建小白专用版目录
+          New-Item -ItemType Directory -Path $packageName -Force
+          
+          # 复制主程序（编译好的可执行文件）
+          Copy-Item "dist/CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}.exe" "$packageName/"
+          Copy-Item "cloudflare_speedtest.py" "$packageName/"
+          Copy-Item "requirements.txt" "$packageName/"
+          Copy-Item "README.md" "$packageName/"
+          
+          # 下载 Cloudflare IP 列表
+          Invoke-WebRequest -Uri "https://www.cloudflare.com/ips-v4/" -OutFile "$packageName/Cloudflare.txt"
+          
+          # 下载对应的 CloudflareST_proxy 可执行文件
+          if ("${{ matrix.arch }}" -eq "amd64") {
+            Invoke-WebRequest -Uri "https://github.com/byJoey/CloudflareSpeedTest/releases/download/v1.0/CloudflareST_proxy_windows_amd64.zip" -OutFile "CloudflareST_proxy_windows_amd64.zip"
+            Expand-Archive -Path "CloudflareST_proxy_windows_amd64.zip" -DestinationPath "temp"
+            Copy-Item "temp/CloudflareST_proxy_windows_amd64.exe" "$packageName/"
+          } else {
+            Invoke-WebRequest -Uri "https://github.com/byJoey/CloudflareSpeedTest/releases/download/v1.0/CloudflareST_proxy_windows_386.zip" -OutFile "CloudflareST_proxy_windows_386.zip"
+            Expand-Archive -Path "CloudflareST_proxy_windows_386.zip" -DestinationPath "temp"
+            Copy-Item "temp/CloudflareST_proxy_windows_386.exe" "$packageName/"
+          }
+          
+          # 创建小白专用说明文件
+          $readmeContent = @"
+          # Cloudflare SpeedTest Beginner Edition
+          
+          ## Target for Beginners
+          This is a version specially prepared for beginners, containing all necessary files, ready to use after download!
+          
+          ## Contents
+          - CloudflareSpeedTest-*.exe - Main program (compiled executable)
+          - cloudflare_speedtest.py - Python source code (backup)
+          - CloudflareST_proxy_* - Speed test tool (pre-configured)
+          - Cloudflare.txt - IP list
+          - requirements.txt - Python dependencies
+          - README.txt - Detailed usage instructions
+          
+          ## Usage
+          
+          ### Windows Users:
+          1. Double-click to run CloudflareSpeedTest-*.exe (recommended)
+          2. Or run cloudflare_speedtest.py if you have Python installed
+          3. If prompted to install Python, visit https://www.python.org/downloads/
+          
+          ## Features
+          - **Option 1 - Beginner Quick Test**: Simplest, just input 3 numbers
+          - **Option 2 - Regular Speed Test**: For experienced users
+          - **Option 3 - Proxy Optimization**: Generate proxy IP list
+          
+          ## Beginner Tips
+          - First time users please select "Option 1 - Beginner Quick Test"
+          - Press Enter to use default settings
+          - Check result.csv file after testing
+          
+          ## Troubleshooting
+          - Ensure network connection is normal
+          - If download fails, check firewall settings
+          - More help: https://github.com/byJoey/CloudflareSpeedTest
+          
+          ---
+          Version: Beginner Edition
+          System: ${{ matrix.platform }} ${{ matrix.arch }}
+          "@
+          
+          $readmeContent | Out-File -FilePath "$packageName/README.txt" -Encoding UTF8
+          
+          # 创建压缩包
+          Compress-Archive -Path "$packageName\*" -DestinationPath "$packageName.zip"
+
+      - name: 构建小白专用版 (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          # 设置变量避免中文字符问题
+          PACKAGE_NAME="CloudflareSpeedTest-Beginner-For-Newbies-${{ matrix.platform }}-${{ matrix.arch }}"
+          
+          # 创建小白专用版目录
+          mkdir -p $PACKAGE_NAME
+          
+          # 复制主程序（编译好的可执行文件）
+          cp dist/CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }} $PACKAGE_NAME/
+          cp cloudflare_speedtest.py $PACKAGE_NAME/
+          cp requirements.txt $PACKAGE_NAME/
+          cp README.md $PACKAGE_NAME/
+          
+          # 下载 Cloudflare IP 列表
+          curl -o $PACKAGE_NAME/Cloudflare.txt https://www.cloudflare.com/ips-v4/
+          
+          # 下载对应的 CloudflareST_proxy 可执行文件
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            curl -L -o CloudflareST_proxy_linux_amd64.tar.gz https://github.com/byJoey/CloudflareSpeedTest/releases/download/v1.0/CloudflareST_proxy_linux_amd64.tar.gz
+            tar -xzf CloudflareST_proxy_linux_amd64.tar.gz
+            cp CloudflareST_proxy_linux_amd64 $PACKAGE_NAME/
+            chmod +x $PACKAGE_NAME/CloudflareST_proxy_linux_amd64
+          elif [ "${{ matrix.platform }}" = "macos" ]; then
+            if [ "${{ matrix.arch }}" = "amd64" ]; then
+              curl -L -o CloudflareST_proxy_darwin_amd64.zip https://github.com/byJoey/CloudflareSpeedTest/releases/download/v1.0/CloudflareST_proxy_darwin_amd64.zip
+              unzip CloudflareST_proxy_darwin_amd64.zip
+              cp CloudflareST_proxy_darwin_amd64 $PACKAGE_NAME/
+              chmod +x $PACKAGE_NAME/CloudflareST_proxy_darwin_amd64
+            else
+              curl -L -o CloudflareST_proxy_darwin_arm64.zip https://github.com/byJoey/CloudflareSpeedTest/releases/download/v1.0/CloudflareST_proxy_darwin_arm64.zip
+              unzip CloudflareST_proxy_darwin_arm64.zip
+              cp CloudflareST_proxy_darwin_arm64 $PACKAGE_NAME/
+              chmod +x $PACKAGE_NAME/CloudflareST_proxy_darwin_arm64
+            fi
+          fi
+          
+          # 创建小白专用说明文件
+          cat > $PACKAGE_NAME/README.txt << 'EOF'
+          # Cloudflare SpeedTest Beginner Edition
+          
+          ## Target for Beginners
+          This is a version specially prepared for beginners, containing all necessary files, ready to use after download!
+          
+          ## Contents
+          - CloudflareSpeedTest-* - Main program (compiled executable)
+          - cloudflare_speedtest.py - Python source code (backup)
+          - CloudflareST_proxy_* - Speed test tool (pre-configured)
+          - Cloudflare.txt - IP list
+          - requirements.txt - Python dependencies
+          - README.txt - Detailed usage instructions
+          
+          ## Usage
+          
+          ### macOS/Linux Users:
+          1. Open terminal, navigate to this directory
+          2. Run: ./CloudflareSpeedTest-* (recommended)
+          3. Or run: python3 cloudflare_speedtest.py if you have Python
+          4. If permission issues, run: chmod +x CloudflareSpeedTest-* CloudflareST_proxy_*
+          
+          ## Features
+          - **Option 1 - Beginner Quick Test**: Simplest, just input 3 numbers
+          - **Option 2 - Regular Speed Test**: For experienced users
+          - **Option 3 - Proxy Optimization**: Generate proxy IP list
+          
+          ## Beginner Tips
+          - First time users please select "Option 1 - Beginner Quick Test"
+          - Press Enter to use default settings
+          - Check result.csv file after testing
+          
+          ## Troubleshooting
+          - Ensure network connection is normal
+          - If download fails, check firewall settings
+          - More help: https://github.com/byJoey/CloudflareSpeedTest
+          
+          ---
+          Version: Beginner Edition
+          System: ${{ matrix.platform }} ${{ matrix.arch }}
+          EOF
+          
+          # 创建压缩包
+          tar -czf $PACKAGE_NAME.tar.gz $PACKAGE_NAME/
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/CloudflareSpeedTest-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}
+          retention-days: 30
+
+      - name: 上传小白专用版
+        uses: actions/upload-artifact@v4
+        with:
+          name: Beginner-Edition-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            CloudflareSpeedTest-Beginner-For-Newbies-${{ matrix.platform }}-${{ matrix.arch }}.zip
+            CloudflareSpeedTest-Beginner-For-Newbies-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+          retention-days: 30
+
+  # 创建 Release（当推送 tag 时）
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: 显示下载的文件
+        run: ls -R ./artifacts
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/CloudflareSpeedTest-windows-amd64/CloudflareSpeedTest-windows-amd64.exe
+            artifacts/CloudflareSpeedTest-linux-amd64/CloudflareSpeedTest-linux-amd64
+            artifacts/CloudflareSpeedTest-macos-amd64/CloudflareSpeedTest-macos-amd64
+            artifacts/CloudflareSpeedTest-macos-arm64/CloudflareSpeedTest-macos-arm64
+            artifacts/Beginner-Edition-windows-amd64/CloudflareSpeedTest-Beginner-For-Newbies-windows-amd64.zip
+            artifacts/Beginner-Edition-linux-amd64/CloudflareSpeedTest-Beginner-For-Newbies-linux-amd64.tar.gz
+            artifacts/Beginner-Edition-macos-amd64/CloudflareSpeedTest-Beginner-For-Newbies-macos-amd64.tar.gz
+            artifacts/Beginner-Edition-macos-arm64/CloudflareSpeedTest-Beginner-For-Newbies-macos-arm64.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 🚀 Cloudflare SpeedTest 跨平台版本发布
+            
+            ### 📦 标准版本（适合有经验用户）
+            - **Windows (x64)**: CloudflareSpeedTest-windows-amd64.exe
+            - **Linux (x64)**: CloudflareSpeedTest-linux-amd64
+            - **macOS (Intel)**: CloudflareSpeedTest-macos-amd64
+            - **macOS (Apple Silicon)**: CloudflareSpeedTest-macos-arm64
+            
+            ### 🎯 小白专用版（推荐新手使用）
+            - **Windows (x64)**: CloudflareSpeedTest-Beginner-For-Newbies-windows-amd64.zip
+            - **Linux (x64)**: CloudflareSpeedTest-Beginner-For-Newbies-linux-amd64.tar.gz
+            - **macOS (Intel)**: CloudflareSpeedTest-Beginner-For-Newbies-macos-amd64.tar.gz
+            - **macOS (Apple Silicon)**: CloudflareSpeedTest-Beginner-For-Newbies-macos-arm64.tar.gz
+            
+            ### 🌟 功能特性
+            - 🎯 内置 97 个全球数据中心机场码
+            - 🌍 支持城市名称智能识别（如"香港"、"东京"）
+            - ⚙️ 预设配置：快速/标准/高质量测试
+            - 🔧 完全自定义参数
+            - 📊 自动生成测速报告
+            - 🆕 **小白快速测试**：专为新手设计，只需输入3个数字
+            
+            ### 💡 版本选择建议
+            - **新手用户**：下载"小白专用版"，包含所有必要文件，解压即用
+            - **有经验用户**：下载"标准版本"，单个可执行文件，更轻量
+            
+            ### 🚀 使用方法
+            **小白专用版**：
+            1. 下载对应平台的压缩包
+            2. 解压到任意目录
+            3. 运行 cloudflare_speedtest.py
+            4. 选择"选项1 - 小白快速测试"
+            
+            **标准版本**：
+            1. 下载对应平台的可执行文件
+            2. 双击运行（Windows）或赋予执行权限（Linux/macOS）
+            3. 按提示选择机场码和测试配置
+            4. 等待测速完成，查看 result.csv 结果文件
+
