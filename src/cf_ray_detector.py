@@ -146,30 +146,56 @@ def get_cloudflare_colo(ip: str, port: int = 443, timeout: int = 5) -> Dict:
             - success: 是否成功获取
     """
     try:
-        # 构造请求URL
-        url = f"https://{ip}:{port}"
+        # 构造请求URL - 使用多个测试域名提高成功率
+        test_hosts = [
+            'speed.cloudflare.com',
+            'cloudflare.com',
+            '1.1.1.1',
+            'www.cloudflare.com'
+        ]
         
-        # 设置请求头
-        headers = {
-            'Host': 'speed.cloudflare.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        cf_ray = None
+        last_error = None
         
-        # 发起请求
-        response = requests.get(
-            url,
-            headers=headers,
-            timeout=timeout,
-            verify=False,  # 禁用SSL验证
-            allow_redirects=True,
-            proxies={'http': None, 'https': None}  # 绕过代理直接连接
-        )
-        
-        # 获取CF-RAY响应头
-        cf_ray = response.headers.get('CF-RAY', '')
+        # 尝试多个Host头
+        for host in test_hosts:
+            try:
+                url = f"https://{ip}:{port}"
+                
+                # 设置请求头
+                headers = {
+                    'Host': host,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': '*/*',
+                    'Connection': 'close'
+                }
+                
+                # 发起请求
+                response = requests.get(
+                    url,
+                    headers=headers,
+                    timeout=timeout,
+                    verify=False,  # 禁用SSL验证
+                    allow_redirects=False,  # 不跟随重定向
+                    proxies={'http': None, 'https': None}  # 绕过代理直接连接
+                )
+                
+                # 获取CF-RAY响应头
+                cf_ray = response.headers.get('CF-RAY', '')
+                
+                if cf_ray:
+                    logger.debug(f"CF-RAY检测成功使用Host: {host}")
+                    break
+                    
+            except Exception as e:
+                last_error = e
+                continue
         
         if not cf_ray:
-            logger.debug(f"未找到CF-RAY头: {ip}:{port}")
+            if last_error:
+                logger.debug(f"所有Host尝试失败: {ip}:{port}, 最后错误: {last_error}")
+            else:
+                logger.debug(f"未找到CF-RAY头: {ip}:{port}")
             return {'success': False}
         
         # 解析CF-RAY格式: "8xxxxx-NRT"

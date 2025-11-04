@@ -112,17 +112,17 @@ class IPDetectorV2:
         
         api_timeout = getattr(self.config, 'api_timeout', 5)
         
-        # 注册IPInfo.IO（主要API - 优先级1）
+        # 注册IPInfo.IO（备用API - 优先级2，因为对CF IP不准确）
         if getattr(self.config, 'api_ipinfo_enabled', True):
             ipinfo = IPInfoProvider(timeout=api_timeout)
-            priority = getattr(self.config, 'api_ipinfo_priority', 1)
+            priority = getattr(self.config, 'api_ipinfo_priority', 2)
             manager.register_api(ipinfo, priority)
             logger.info(f"已注册IPInfo.IO API（优先级: {priority}）")
         
-        # 注册IP-API.COM（备用API - 优先级2）
+        # 注册IP-API.COM（主要API - 优先级1，对CF IP更准确）
         if getattr(self.config, 'api_ipapi_enabled', True):
             ipapi = IPAPIProvider(timeout=api_timeout)
-            priority = getattr(self.config, 'api_ipapi_priority', 2)
+            priority = getattr(self.config, 'api_ipapi_priority', 1)
             manager.register_api(ipapi, priority)
             logger.info(f"已注册IP-API.COM（优先级: {priority}）")
         
@@ -204,15 +204,15 @@ class IPDetectorV2:
                     self._cache_and_record(ip, port, result, 'cf_ray', response_time)
                     return result
                 
-                # CF-RAY失败，记录警告
-                logger.warning(f"CF-RAY检测失败: {ip}:{port}，第三方API可能不准确")
+                # CF-RAY失败，记录警告并跳过第三方API（因为会返回旧金山）
+                logger.warning(f"CF-RAY检测失败: {ip}:{port}，跳过第三方API（会返回Cloudflare总部地址）")
                 
-                # 尝试第三方API作为备选
-                result = self._try_api(ip)
+                # 直接使用GeoIP数据库（虽然不够准确，但比旧金山好）
+                result = self._try_geoip(ip)
                 if result:
                     response_time = time.time() - start_time
-                    logger.warning(f"使用第三方API检测CF IP: {ip}，结果可能不准确 -> {result['city']}, {result['country']}")
-                    self._cache_and_record(ip, port, result, 'api', response_time)
+                    logger.warning(f"使用GeoIP检测CF IP: {ip} -> {result['city']}, {result['country']}（可能不准确）")
+                    self._cache_and_record(ip, port, result, 'geoip', response_time)
                     return result
             else:
                 # 非Cloudflare IP：先尝试第三方API
