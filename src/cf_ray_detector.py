@@ -161,8 +161,12 @@ def get_cloudflare_colo(ip: str, port: int = 443, timeout: int = 5) -> Dict:
             headers=headers,
             timeout=timeout,
             verify=False,  # 禁用SSL验证
+<<<<<<< HEAD
             allow_redirects=True,
             proxies={'http': None, 'https': None}  # 绕过代理直接连接
+=======
+            allow_redirects=True
+>>>>>>> 8fbb685c5af779c3b93a258593411d2902c91c49
         )
         
         # 获取CF-RAY响应头
