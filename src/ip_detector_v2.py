@@ -204,15 +204,23 @@ class IPDetectorV2:
                     self._cache_and_record(ip, port, result, 'cf_ray', response_time)
                     return result
                 
-                # CF-RAY失败，记录警告并跳过第三方API（因为会返回旧金山）
-                logger.warning(f"CF-RAY检测失败: {ip}:{port}，跳过第三方API（会返回Cloudflare总部地址）")
+                # CF-RAY失败，记录警告
+                logger.warning(f"CF-RAY检测失败: {ip}:{port}，尝试备用方法")
                 
-                # 直接使用GeoIP数据库（虽然不够准确，但比旧金山好）
+                # 尝试GeoIP数据库（优先，因为可能比第三方API准确）
                 result = self._try_geoip(ip)
                 if result:
                     response_time = time.time() - start_time
                     logger.warning(f"使用GeoIP检测CF IP: {ip} -> {result['city']}, {result['country']}（可能不准确）")
                     self._cache_and_record(ip, port, result, 'geoip', response_time)
+                    return result
+                
+                # GeoIP也失败，最后尝试第三方API（会返回旧金山，但总比没有好）
+                result = self._try_api(ip)
+                if result:
+                    response_time = time.time() - start_time
+                    logger.warning(f"使用第三方API检测CF IP: {ip}，结果可能不准确（可能显示旧金山） -> {result['city']}, {result['country']}")
+                    self._cache_and_record(ip, port, result, 'api', response_time)
                     return result
             else:
                 # 非Cloudflare IP：先尝试第三方API
