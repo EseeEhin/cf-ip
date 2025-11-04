@@ -1,0 +1,189 @@
+2025-11-04 13:45:04 [INFO] src.utils:295 - ============================================================
+2025-11-04 13:45:04 [INFO] src.utils:296 - 优选IP自动更新程序启动
+2025-11-04 13:45:04 [INFO] src.utils:297 - 启动时间: 2025-11-04 13:45:04
+2025-11-04 13:45:04 [INFO] src.utils:298 - ============================================================
+2025-11-04 13:45:04 [INFO] src.utils:299 - 
+配置信息:
+  数据源: https://cfip.wxgqlfx.fun/
+  最大延迟: 100ms
+  过滤国家: JP, HK, US
+  输出文件: output/optimal-ips.txt
+  GitHub仓库: ***
+  日志级别: INFO
+2025-11-04 13:45:04 [INFO] src.utils:302 - ============================================================
+2025-11-04 13:45:04 [INFO] src.utils:303 - 步骤 1/3: 获取优选IP数据（多数据源模式）
+2025-11-04 13:45:04 [INFO] src.utils:304 - ============================================================
+2025-11-04 13:45:04 [INFO] src.utils:311 - 配置的国家: JP, HK, US
+2025-11-04 13:45:04 [INFO] src.utils:312 - 每个国家限制: 20 个节点
+2025-11-04 13:45:04 [INFO] src.multi_source_fetcher:509 - 正在从 来源A 获取数据...
+2025-11-04 13:45:04 [INFO] src.multi_source_fetcher:68 - [来源A] 正在查询国家: JP, 限制: 20
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:86 - [来源A] JP 获取到 20 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:68 - [来源A] 正在查询国家: HK, 限制: 20
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:86 - [来源A] HK 获取到 20 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:68 - [来源A] 正在查询国家: US, 限制: 20
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:86 - [来源A] US 获取到 20 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:102 - [来源A] 共获取 60 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:513 - 来源A 获取到 60 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:509 - 正在从 来源B 获取数据...
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:121 - [来源B] 正在获取数据: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:129 - [来源B] 获取到 22 行数据
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:143 - [来源B] 解析出 21 个有效节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:173 - [来源B] 正在查询 21 个IP的地理位置...
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:05 [INFO] src.ip_location:65 - 成功加载国家数据库: cache/geoip/GeoLite2-Country.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:73 - 成功加载城市数据库: cache/geoip/GeoLite2-City.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:65 - 成功加载国家数据库: cache/geoip/GeoLite2-Country.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:65 - 成功加载国家数据库: cache/geoip/GeoLite2-Country.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:73 - 成功加载城市数据库: cache/geoip/GeoLite2-City.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:73 - 成功加载城市数据库: cache/geoip/GeoLite2-City.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:65 - 成功加载国家数据库: cache/geoip/GeoLite2-Country.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:65 - 成功加载国家数据库: cache/geoip/GeoLite2-Country.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:73 - 成功加载城市数据库: cache/geoip/GeoLite2-City.mmdb
+2025-11-04 13:45:05 [INFO] src.ip_location:73 - 成功加载城市数据库: cache/geoip/GeoLite2-City.mmdb
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:210 - [来源B] 地理位置查询完成
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:513 - 来源B 获取到 21 个节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:509 - 正在从 来源C 获取数据...
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:237 - [来源C] 正在获取数据: https://raw.githubusercontent.com/anlish01/cfipcaiji/refs/heads/main/ip.txt
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:245 - [来源C] 获取到 49 行数据
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:259 - [来源C] 解析出 49 个有效节点
+2025-11-04 13:45:05 [INFO] src.multi_source_fetcher:289 - [来源C] 正在查询 49 个IP的地理位置...
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:05 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:06 [INFO] src.ip_location:244 - CF-RAY检测成功: 104.18.166.129:443 -> IAD (Ashburn, US)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:06 [INFO] src.ip_location:244 - CF-RAY检测成功: 104.19.148.121:443 -> IAD (Ashburn, US)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:06 [INFO] src.ip_location:244 - CF-RAY检测成功: 104.19.220.22:443 -> IAD (Ashburn, US)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Warning: 4 13:45:06 [WARNING] src.ip_location:299 - 无可用数据库查询IP: 104.31.16.158
+Warning: 4 13:45:06 [WARNING] src.ip_location:351 - 查询失败，返回默认值: 104.31.16.158
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:326 - [来源C] 地理位置查询完成
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:513 - 来源C 获取到 49 个节点
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:509 - 正在从 来源D 获取数据...
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:370 - [来源D] 正在获取 bestproxy 数据...
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:390 - [来源D] bestproxy 获取到 14 个节点
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:397 - [来源D] 正在获取 bestcf 数据...
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:404 - [来源D] bestcf 解析出 10 个有效IP
+2025-11-04 13:45:06 [INFO] src.multi_source_fetcher:408 - [来源D] 正在查询 10 个IP的地理位置...
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: cannot import name 'get_detector' from 'src.ip_detector_v2' (/home/runner/work/cf-ip/cf-ip/src/ip_detector_v2.py)
+Error: -04 13:45:06 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:07 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:07 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+Error: -04 13:45:07 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:07 [INFO] src.ip_location:244 - CF-RAY检测成功: 104.17.212.66:443 -> IAD (Ashburn, US)
+Error: -04 13:45:07 [ERROR] src.ip_location:420 - V2检测器异常，回退到V1: invalid decimal literal (ip_detector_v2.py, line 41)
+2025-11-04 13:45:07 [INFO] src.ip_location:244 - CF-RAY检测成功: 162.159.135.40:443 -> IAD (Ashburn, US)
+2025-11-04 13:45:07 [INFO] src.multi_source_fetcher:412 - [来源D] bestcf 获取到 2 个节点
+2025-11-04 13:45:07 [INFO] src.multi_source_fetcher:416 - [来源D] 共获取 16 个节点
+2025-11-04 13:45:07 [INFO] src.multi_source_fetcher:513 - 来源D 获取到 16 个节点
+2025-11-04 13:45:07 [INFO] src.multi_source_fetcher:521 - 所有数据源共获取 146 个节点
+2025-11-04 13:45:07 [INFO] src.utils:323 - 共获取到 146 个节点
+2025-11-04 13:45:07 [INFO] src.utils:331 - 数据源统计:
+2025-11-04 13:45:07 [INFO] src.utils:333 -   A: 60 个节点
+2025-11-04 13:45:07 [INFO] src.utils:333 -   B: 21 个节点
+2025-11-04 13:45:07 [INFO] src.utils:333 -   C: 49 个节点
+2025-11-04 13:45:07 [INFO] src.utils:333 -   D: 16 个节点
+2025-11-04 13:45:07 [INFO] src.utils:337 - 生成输出文本，长度: 4603 字符
+2025-11-04 13:45:07 [INFO] src.utils:341 - 成功写入输出文件: output/optimal-ips.txt
+2025-11-04 13:45:07 [INFO] src.utils:342 - 总节点数量: 146
+2025-11-04 13:45:07 [INFO] src.utils:119 - ============================================================
+2025-11-04 13:45:07 [INFO] src.utils:120 - 步骤 2/2: 上传到GitHub
+2025-11-04 13:45:07 [INFO] src.utils:121 - ============================================================
+2025-11-04 13:45:07 [INFO] src.utils:138 - 准备上传文件: output/optimal-ips.txt
+2025-11-04 13:45:07 [INFO] src.utils:139 - 文件大小: 4603 字节
+2025-11-04 13:45:07 [INFO] src.github_uploader:51 - 成功连接到GitHub仓库: ***
+2025-11-04 13:45:07 [INFO] src.github_uploader:52 - 仓库描述: 无
+2025-11-04 13:45:07 [INFO] src.github_uploader:53 - 默认分支: main
+2025-11-04 13:45:07 [INFO] src.utils:152 - GitHub API剩余调用次数: 4999/5000
+2025-11-04 13:45:07 [INFO] src.github_uploader:217 - 准备上传文件: output/optimal-ips.txt -> optimal-ips.txt
+2025-11-04 13:45:07 [INFO] src.github_uploader:218 - 文件大小: 4603 字符
+2025-11-04 13:45:07 [INFO] src.github_uploader:219 - 节点数量: 1
+2025-11-04 13:45:07 [INFO] src.github_uploader:221 - 国家分布: A
+2025-11-04 13:45:08 [INFO] src.github_uploader:228 - 文件已存在，执行更新操作
+2025-11-04 13:45:08 [INFO] src.github_uploader:236 - 文件更新成功
+2025-11-04 13:45:08 [INFO] src.github_uploader:250 - Commit SHA: e22853d5585f37a8f7b33787b0edc5d3d16d6dde
+2025-11-04 13:45:08 [INFO] src.github_uploader:251 - Commit URL: https://github.com/***/commit/e22853d5585f37a8f7b33787b0edc5d3d16d6dde
+2025-11-04 13:45:08 [INFO] src.github_uploader:255 - Commit 信息: 无法获取
+2025-11-04 13:45:08 [INFO] src.utils:164 - 文件上传成功
+2025-11-04 13:45:08 [INFO] src.utils:190 - ============================================================
+2025-11-04 13:45:08 [INFO] src.utils:191 - 步骤 3/3: 上传到订阅项目API
+2025-11-04 13:45:08 [INFO] src.utils:192 - ============================================================
+2025-11-04 13:45:08 [INFO] src.utils:196 - API上传功能未启用，跳过
+2025-11-04 13:45:08 [INFO] src.utils:248 - ============================================================
+2025-11-04 13:45:08 [INFO] src.utils:249 - 执行摘要
+2025-11-04 13:45:08 [INFO] src.utils:250 - ============================================================
+2025-11-04 13:45:08 [INFO] src.utils:251 - 开始时间: 2025-11-04 13:45:04
+2025-11-04 13:45:08 [INFO] src.utils:252 - 结束时间: 2025-11-04 13:45:08
+2025-11-04 13:45:08 [INFO] src.utils:253 - IP数据获取: ✓ 成功
+2025-11-04 13:45:08 [INFO] src.utils:254 - GitHub上传: ✓ 成功
+2025-11-04 13:45:08 [INFO] src.utils:258 - API上传: - 跳过（未配置）
+2025-11-04 13:45:08 [INFO] src.utils:266 - 状态: 全部完成
+2025-11-04 13:45:08 [INFO] src.utils:272 - ============================================================

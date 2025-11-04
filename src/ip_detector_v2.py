@@ -21,7 +21,7 @@ from .ip_location import GeoIPDatabase
 
 # 导入新模块
 from .api_providers import (
-    IPInfoWidgetProvider,
+    IPInfoProvider,
     IPAPIProvider,
     IPWhoisProvider,
     IP2LocationProvider,
@@ -112,12 +112,12 @@ class IPDetectorV2:
         
         api_timeout = getattr(self.config, 'api_timeout', 5)
         
-        # 注册IPInfo.IO Widget（主要API - 优先级1）
-        if getattr(self.config, 'api_ipinfo_widget_enabled', True):
-            ipinfo_widget = IPInfoWidgetProvider(timeout=api_timeout)
-            priority = getattr(self.config, 'api_ipinfo_widget_priority', 1)
-            manager.register_api(ipinfo_widget, priority)
-            logger.info(f"已注册IPInfo.IO Widget API（优先级: {priority}）")
+        # 注册IPInfo.IO（主要API - 优先级1）
+        if getattr(self.config, 'api_ipinfo_enabled', True):
+            ipinfo = IPInfoProvider(timeout=api_timeout)
+            priority = getattr(self.config, 'api_ipinfo_priority', 1)
+            manager.register_api(ipinfo, priority)
+            logger.info(f"已注册IPInfo.IO API（优先级: {priority}）")
         
         # 注册IP-API.COM（备用API - 优先级2）
         if getattr(self.config, 'api_ipapi_enabled', True):

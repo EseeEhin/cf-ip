@@ -206,12 +206,12 @@ class IPAPIProvider(BaseAPIProvider):
 #     pass
 
 
-class IPInfoWidgetProvider(BaseAPIProvider):
-    """IPInfo.IO Widget API提供商 - 主要API（速度最快，准确度高）"""
+class IPInfoProvider(BaseAPIProvider):
+    """IPInfo.IO API提供商 - 主要API（速度最快，准确度高）"""
     
     def __init__(self, timeout: int = 5):
-        super().__init__('ipinfo_widget', timeout)
-        self.url_template = 'https://ipinfo.io/widget/demo/{ip}'
+        super().__init__('ipinfo', timeout)
+        self.url_template = 'https://ipinfo.io/{ip}/json'
     
     def query(self, ip: str) -> Optional[Dict]:
         """查询IP信息"""
@@ -232,57 +232,56 @@ class IPInfoWidgetProvider(BaseAPIProvider):
                 return None
         
         except requests.exceptions.Timeout:
-            logger.debug(f"IPInfo Widget超时: {ip}")
+            logger.debug(f"IPInfo.IO超时: {ip}")
             self.mark_failure()
             return None
         
         except requests.exceptions.RequestException as e:
-            logger.debug(f"IPInfo Widget请求失败: {ip}, {e}")
+            logger.debug(f"IPInfo.IO请求失败: {ip}, {e}")
             self.mark_failure()
             return None
         
         except Exception as e:
-            logger.error(f"IPInfo Widget异常: {ip}, {e}")
+            logger.error(f"IPInfo.IO异常: {ip}, {e}")
             self.mark_failure()
             return None
     
     def parse_response(self, response: requests.Response) -> Optional[Dict]:
-        """解析IPInfo Widget响应"""
+        """解析IPInfo.IO标准API响应"""
         try:
             data = response.json()
-            
-            # IPInfo返回的数据在data.data中
-            ip_data = data.get('data', {})
-            
-            if not ip_data:
+
+            if not data or data.get('bogon'):
                 return None
-            
+
             # 提取位置信息
-            loc = ip_data.get('loc', '').split(',')
+            loc = data.get('loc', '').split(',')
             latitude = float(loc[0]) if len(loc) > 0 else 0.0
             longitude = float(loc[1]) if len(loc) > 1 else 0.0
-            
-            # 提取ISP信息用于CF识别
-            org = ip_data.get('org', '')
-            company_name = ip_data.get('company', {}).get('name', '')
-            
+
+            # 'org' 字段通常包含ASN和ISP名称
+            org = data.get('org', '')
+            asn = ''
+            if org.startswith('AS'):
+                asn = org.split(' ')[0]
+
             return {
-                'country': ip_data.get('country', 'Unknown'),
-                'country_name': ip_data.get('country', 'Unknown'),
-                'city': ip_data.get('city', 'Unknown'),
-                'region': ip_data.get('region', ''),
+                'country': data.get('country', 'Unknown'),
+                'country_name': data.get('country', 'Unknown'),
+                'city': data.get('city', 'Unknown'),
+                'region': data.get('region', ''),
                 'latitude': latitude,
                 'longitude': longitude,
                 'isp': org,
-                'org': company_name,
-                'asn': ip_data.get('asn', {}).get('asn', ''),
-                'timezone': ip_data.get('timezone', ''),
-                'source': 'ipinfo_widget',
+                'org': org,
+                'asn': asn,
+                'timezone': data.get('timezone', ''),
+                'source': 'ipinfo',
                 'confidence': 0.95
             }
-        
+
         except Exception as e:
-            logger.debug(f"IPInfo Widget响应解析失败: {e}")
+            logger.debug(f"IPInfo.IO响应解析失败: {e}")
             return None
 
 
