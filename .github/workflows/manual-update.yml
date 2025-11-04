@@ -1,0 +1,64 @@
+name: Manual Update IPs
+
+on:
+  workflow_dispatch:
+    inputs:
+      countries:
+        description: 'Countries to fetch (comma-separated, e.g., JP,US,SG)'
+        required: false
+        default: 'JP,US,SG'
+      limit:
+        description: 'Number of IPs per country'
+        required: false
+        default: '100'
+      force_update:
+        description: 'Force update even if no changes'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  manual-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run IP fetcher and uploader
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_REPO: ${{ secrets.TARGET_REPO }}
+          COUNTRIES: ${{ github.event.inputs.countries }}
+          IP_LIMIT: ${{ github.event.inputs.limit }}
+          FORCE_UPDATE: ${{ github.event.inputs.force_update }}
+        run: |
+          echo "Running with countries: $COUNTRIES"
+          echo "IP limit per country: $IP_LIMIT"
+          echo "Force update: $FORCE_UPDATE"
+          python -m src.main
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
+      
+      - name: Upload output files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-files-${{ github.run_number }}
+          path: output/
+          retention-days: 7

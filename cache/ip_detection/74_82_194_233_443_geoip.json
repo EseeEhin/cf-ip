@@ -1,0 +1,12 @@
+{
+  "data": {
+    "country": "JP",
+    "country_name": "Japan",
+    "city": "Tokyo",
+    "ip": "74.82.194.233",
+    "source": "GeoLite2-City"
+  },
+  "timestamp": 1762089875.4098186,
+  "ttl": 604800,
+  "cache_type": "geoip"
+}

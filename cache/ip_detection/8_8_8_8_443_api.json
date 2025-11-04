@@ -1,0 +1,20 @@
+{
+  "data": {
+    "country": "US",
+    "country_name": "US",
+    "city": "Mountain View",
+    "region": "California",
+    "latitude": 37.4056,
+    "longitude": -122.0775,
+    "isp": "AS15169 Google LLC",
+    "org": "Google LLC",
+    "asn": "AS15169",
+    "timezone": "America/Los_Angeles",
+    "source": "ipinfo_widget",
+    "confidence": 0.95,
+    "ip": "8.8.8.8"
+  },
+  "timestamp": 1762087433.717546,
+  "ttl": 43200,
+  "cache_type": "api"
+}

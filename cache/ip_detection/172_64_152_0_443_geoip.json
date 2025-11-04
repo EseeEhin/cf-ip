@@ -1,0 +1,12 @@
+{
+  "data": {
+    "country": "CF",
+    "country_name": "Cloudflare",
+    "city": "Anycast",
+    "ip": "172.64.152.0",
+    "source": "Cloudflare-Range"
+  },
+  "timestamp": 1762089879.8045645,
+  "ttl": 604800,
+  "cache_type": "geoip"
+}

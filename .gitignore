@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# 环境变量
+.env
+.env.local
+
+# 日志文件
+logs/*.log
+*.log
+
+# 输出文件（如果不需要提交到仓库）
+# output/*.txt
+# 缓存文件
+cache/*.json
+!cache/.gitkeep
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# 临时文件
+*.tmp
+*.bak
+*.swp

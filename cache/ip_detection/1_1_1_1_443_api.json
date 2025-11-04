@@ -1,0 +1,20 @@
+{
+  "data": {
+    "country": "AU",
+    "country_name": "AU",
+    "city": "Brisbane",
+    "region": "Queensland",
+    "latitude": -27.4816,
+    "longitude": 153.0175,
+    "isp": "AS13335 Cloudflare, Inc.",
+    "org": "APNIC and Cloudflare DNS Resolver project",
+    "asn": "AS13335",
+    "timezone": "Australia/Brisbane",
+    "source": "ipinfo_widget",
+    "confidence": 0.95,
+    "ip": "1.1.1.1"
+  },
+  "timestamp": 1762087434.8220994,
+  "ttl": 43200,
+  "cache_type": "api"
+}

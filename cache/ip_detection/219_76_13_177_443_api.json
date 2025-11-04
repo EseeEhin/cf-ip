@@ -1,0 +1,14 @@
+{
+  "data": {
+    "country": "HK",
+    "country_name": "香港",
+    "city": "中環",
+    "isp": "PCCW IMS Limited",
+    "source": "ip_api_com",
+    "confidence": 0.95,
+    "ip": "219.76.13.177"
+  },
+  "timestamp": 1762250661.2952008,
+  "ttl": 43200,
+  "cache_type": "api"
+}

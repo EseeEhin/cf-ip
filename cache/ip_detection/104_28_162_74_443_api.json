@@ -1,0 +1,14 @@
+{
+  "data": {
+    "country": "JP",
+    "country_name": "日本",
+    "city": "成田市",
+    "isp": "Cloudflare, Inc.",
+    "source": "ip_api_com",
+    "confidence": 0.95,
+    "ip": "104.28.162.74"
+  },
+  "timestamp": 1762250660.833307,
+  "ttl": 43200,
+  "cache_type": "api"
+}
