@@ -192,10 +192,10 @@ class SourceB(DataSource):
                     if location:
                         country = location.get('country', 'US')
                         city = location.get('city', 'Los Angeles')
-                        # 确保不返回Unknown
-                        if country == 'Unknown' or not country:
+                        # 兜底机制：替换Unknown、CF、Anycast等无效标记
+                        if country in ['Unknown', 'CF', ''] or not country:
                             country = 'US'
-                        if city == 'Unknown' or not city:
+                        if city in ['Unknown', 'Anycast', ''] or not city:
                             city = 'Los Angeles'
                         return (node, country, city)
                     else:
@@ -324,10 +324,10 @@ class SourceC(DataSource):
                     if location:
                         country = location.get('country', 'US')
                         city = location.get('city', 'Los Angeles')
-                        # 确保不返回Unknown
-                        if country == 'Unknown' or not country:
+                        # 兜底机制：替换Unknown、CF、Anycast等无效标记
+                        if country in ['Unknown', 'CF', ''] or not country:
                             country = 'US'
-                        if city == 'Unknown' or not city:
+                        if city in ['Unknown', 'Anycast', ''] or not city:
                             city = 'Los Angeles'
                         return (node, country, city)
                     else:
