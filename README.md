@@ -9,19 +9,30 @@
 
 ## 🚀 部署方式
 
-### 方式1: Zeabur部署 (推荐) ⭐
+### 方式1: Railway部署 (推荐) ⭐
 
 **优势**:
 - ✅ 内置定时任务,无需GitHub Actions
 - ✅ 提供Web界面和API接口
-- ✅ 支持手动触发和状态查看
-- ✅ 24/7运行,更稳定可靠
+- ✅ $5/月免费额度
+- ✅ 自动部署,简单易用
 
 **快速开始**:
-- 📖 [5分钟快速部署](ZEABUR_QUICKSTART.md)
-- 📚 [完整部署文档](ZEABUR_DEPLOYMENT.md)
+- 📖 [Railway部署指南](RAILWAY_DEPLOYMENT.md)
 
-### 方式2: GitHub Actions部署
+### 方式2: Render部署 (完全免费)
+
+**优势**:
+- ✅ 完全免费
+- ✅ 自动HTTPS
+- ✅ 简单配置
+
+**注意**: 免费计划有15分钟休眠限制
+
+**快速开始**:
+- 📖 [Render部署指南](RENDER_DEPLOYMENT.md)
+
+### 方式3: GitHub Actions部署
 
 **优势**:
 - ✅ 完全免费(公开仓库)
