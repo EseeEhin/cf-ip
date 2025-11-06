@@ -1,14 +1,40 @@
 # Clash 优选IP自动更新系统
 
 [![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-blue)](https://github.com/features/actions)
+[![Zeabur](https://img.shields.io/badge/Zeabur-Deploy-green)](https://zeabur.com)
 [![Python](https://img.shields.io/badge/Python-3.9+-green)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-自动从 [cfip.wxgqlfx.fun](https://cfip.wxgqlfx.fun/) 获取优选Cloudflare节点IP，转换格式后自动更新到GitHub仓库，供订阅项目使用。
+自动从多个数据源获取优选Cloudflare节点IP，转换格式后自动更新到GitHub仓库，供订阅项目使用。
+
+## 🚀 部署方式
+
+### 方式1: Zeabur部署 (推荐) ⭐
+
+**优势**:
+- ✅ 内置定时任务,无需GitHub Actions
+- ✅ 提供Web界面和API接口
+- ✅ 支持手动触发和状态查看
+- ✅ 24/7运行,更稳定可靠
+
+**快速开始**:
+- 📖 [5分钟快速部署](ZEABUR_QUICKSTART.md)
+- 📚 [完整部署文档](ZEABUR_DEPLOYMENT.md)
+
+### 方式2: GitHub Actions部署
+
+**优势**:
+- ✅ 完全免费(公开仓库)
+- ✅ 无需服务器
+- ✅ 配置简单
+
+**快速开始**: 见下方[GitHub Actions配置](#github-actions配置)
+
+---
 
 ## ✨ 特性
 
-- 🤖 **全自动运行** - 基于GitHub Actions，无需本地服务器
+- 🤖 **全自动运行** - 支持GitHub Actions和Zeabur两种部署方式
 - 🌍 **多国家支持** - 可配置多个国家/地区的节点
 - ⚡ **智能过滤** - 自动过滤高延迟节点（默认<200ms）
 - 📝 **灵活格式** - 支持多种输出格式
