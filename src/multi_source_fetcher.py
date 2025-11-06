@@ -168,17 +168,17 @@ class SourceB(DataSource):
         return None
     
     def _add_locations(self, nodes: List[Dict]) -> List[Dict]:
-        """批量添加地理位置信息（支持CF-RAY检测）"""
+        """批量添加地理位置信息（增强版 - 使用V2检测器 + 兜底机制）"""
         try:
             logger.info(f"[{self.name}] 正在查询 {len(nodes)} 个IP的地理位置...")
             
-            # 导入get_ip_location以支持端口参数
-            from .ip_location import get_ip_location
+            # 使用IPDetectorV2进行检测（包含三层检测机制）
+            from .ip_detector_v2 import get_detector
             from concurrent.futures import ThreadPoolExecutor, as_completed
             from .config import Config
             
-            # 获取并发配置
             config = Config()
+            detector = get_detector(config)
             max_workers = getattr(config, 'cf_ray_max_workers', 5)
             
             # 使用线程池并发查询
@@ -186,11 +186,26 @@ class SourceB(DataSource):
                 ip = node['ip']
                 port = int(node.get('port', 443))
                 try:
-                    location = get_ip_location(ip, port)
-                    return (node, location.get('country', 'Unknown'), location.get('city', 'Unknown'))
+                    # 使用V2检测器（CF-RAY → API → GeoIP三层检测）
+                    location = detector.detect(ip, port)
+                    
+                    if location:
+                        country = location.get('country', 'US')
+                        city = location.get('city', 'Los Angeles')
+                        # 兜底机制：替换Unknown、CF、Anycast等无效标记
+                        if country in ['Unknown', 'CF', ''] or not country:
+                            country = 'US'
+                        if city in ['Unknown', 'Anycast', ''] or not city:
+                            city = 'Los Angeles'
+                        return (node, country, city)
+                    else:
+                        # 兜底机制：检测失败时使用Cloudflare总部位置
+                        logger.debug(f"检测失败，使用兜底位置: {ip}:{port}")
+                        return (node, 'US', 'Los Angeles')
                 except Exception as e:
-                    logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
-                    return (node, 'Unknown', 'Unknown')
+                    logger.debug(f"查询 {ip}:{port} 位置异常: {e}")
+                    # 兜底机制
+                    return (node, 'US', 'Los Angeles')
             
             # 并发查询所有节点
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -204,18 +219,19 @@ class SourceB(DataSource):
                     except Exception as e:
                         node = futures[future]
                         logger.error(f"查询 {node['ip']} 异常: {e}")
-                        node['country'] = 'Unknown'
-                        node['city'] = 'Unknown'
+                        # 兜底机制
+                        node['country'] = 'US'
+                        node['city'] = 'Los Angeles'
             
             logger.info(f"[{self.name}] 地理位置查询完成")
             return nodes
             
         except Exception as e:
             logger.error(f"[{self.name}] 查询地理位置失败: {e}")
-            # 失败时使用默认值
+            # 失败时使用兜底值
             for node in nodes:
-                node['country'] = 'Unknown'
-                node['city'] = 'Unknown'
+                node['country'] = 'US'
+                node['city'] = 'Los Angeles'
             return nodes
 
 
@@ -284,17 +300,17 @@ class SourceC(DataSource):
         return None
     
     def _add_locations(self, nodes: List[Dict]) -> List[Dict]:
-        """批量添加地理位置信息（支持CF-RAY检测）"""
+        """批量添加地理位置信息（增强版 - 使用V2检测器 + 兜底机制）"""
         try:
             logger.info(f"[{self.name}] 正在查询 {len(nodes)} 个IP的地理位置...")
             
-            # 导入get_ip_location以支持端口参数
-            from .ip_location import get_ip_location
+            # 使用IPDetectorV2进行检测（包含三层检测机制）
+            from .ip_detector_v2 import get_detector
             from concurrent.futures import ThreadPoolExecutor, as_completed
             from .config import Config
             
-            # 获取并发配置
             config = Config()
+            detector = get_detector(config)
             max_workers = getattr(config, 'cf_ray_max_workers', 5)
             
             # 使用线程池并发查询
@@ -302,11 +318,26 @@ class SourceC(DataSource):
                 ip = node['ip']
                 port = int(node.get('port', 443))
                 try:
-                    location = get_ip_location(ip, port)
-                    return (node, location.get('country', 'Unknown'), location.get('city', 'Unknown'))
+                    # 使用V2检测器（CF-RAY → API → GeoIP三层检测）
+                    location = detector.detect(ip, port)
+                    
+                    if location:
+                        country = location.get('country', 'US')
+                        city = location.get('city', 'Los Angeles')
+                        # 兜底机制：替换Unknown、CF、Anycast等无效标记
+                        if country in ['Unknown', 'CF', ''] or not country:
+                            country = 'US'
+                        if city in ['Unknown', 'Anycast', ''] or not city:
+                            city = 'Los Angeles'
+                        return (node, country, city)
+                    else:
+                        # 兜底机制：检测失败时使用Cloudflare总部位置
+                        logger.debug(f"检测失败，使用兜底位置: {ip}:{port}")
+                        return (node, 'US', 'Los Angeles')
                 except Exception as e:
-                    logger.debug(f"查询 {ip}:{port} 位置失败: {e}")
-                    return (node, 'Unknown', 'Unknown')
+                    logger.debug(f"查询 {ip}:{port} 位置异常: {e}")
+                    # 兜底机制
+                    return (node, 'US', 'Los Angeles')
             
             # 并发查询所有节点
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -320,18 +351,19 @@ class SourceC(DataSource):
                     except Exception as e:
                         node = futures[future]
                         logger.error(f"查询 {node['ip']} 异常: {e}")
-                        node['country'] = 'Unknown'
-                        node['city'] = 'Unknown'
+                        # 兜底机制
+                        node['country'] = 'US'
+                        node['city'] = 'Los Angeles'
             
             logger.info(f"[{self.name}] 地理位置查询完成")
             return nodes
             
         except Exception as e:
             logger.error(f"[{self.name}] 查询地理位置失败: {e}")
-            # 失败时使用默认值
+            # 失败时使用兜底值
             for node in nodes:
-                node['country'] = 'Unknown'
-                node['city'] = 'Unknown'
+                node['country'] = 'US'
+                node['city'] = 'Los Angeles'
             return nodes
 
 
