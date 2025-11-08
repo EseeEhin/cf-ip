@@ -1,12 +1,13 @@
 {
   "data": {
-    "country": "CF",
-    "country_name": "Cloudflare",
-    "city": "Anycast",
+    "country": "HK",
+    "country_name": "HK",
+    "city": "Hong Kong",
     "ip": "104.18.43.4",
-    "source": "Cloudflare-Range"
+    "source": "CF-RAY",
+    "colo": "HKG"
   },
-  "timestamp": 1762089869.7212884,
+  "timestamp": 1762312205.1892586,
   "ttl": 604800,
   "cache_type": "geoip"
 }

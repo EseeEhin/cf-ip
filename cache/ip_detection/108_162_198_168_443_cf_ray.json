@@ -1,0 +1,13 @@
+{
+  "data": {
+    "country": "JP",
+    "country_name": "JP",
+    "city": "Tokyo",
+    "ip": "108.162.198.168",
+    "source": "cf_ray",
+    "colo": "NRT"
+  },
+  "timestamp": 1762180509.7738519,
+  "ttl": 86400,
+  "cache_type": "cf_ray"
+}

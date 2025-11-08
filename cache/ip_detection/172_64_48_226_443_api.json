@@ -1,0 +1,20 @@
+{
+  "data": {
+    "country": "US",
+    "country_name": "US",
+    "city": "San Francisco",
+    "region": "California",
+    "latitude": 37.7621,
+    "longitude": -122.3971,
+    "isp": "AS13335 Cloudflare, Inc.",
+    "org": "Cloudflare, Inc.",
+    "asn": "AS13335",
+    "timezone": "America/Los_Angeles",
+    "source": "ipinfo_widget",
+    "confidence": 0.95,
+    "ip": "172.64.48.226"
+  },
+  "timestamp": 1762180501.5581691,
+  "ttl": 43200,
+  "cache_type": "api"
+}

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "country": "HK",
+    "country_name": "HK",
+    "city": "Hong Kong",
+    "ip": "162.159.140.85",
+    "source": "CF-RAY",
+    "colo": "HKG"
+  },
+  "timestamp": 1762312209.032067,
+  "ttl": 604800,
+  "cache_type": "geoip"
+}
